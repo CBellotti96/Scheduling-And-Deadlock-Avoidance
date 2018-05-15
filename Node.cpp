@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <stdlib.h>
+#include <cstdlib>
 #include "Node.h"
 
 using namespace std;
