@@ -1,6 +1,5 @@
 //Chris Bellotti & Ashley Gold
 
-
 #include <iostream>
 #include <stdlib.h>
 #include <fstream>
@@ -15,7 +14,7 @@ using namespace std;
 #define LONG_TIME 9999
 
 /*Define the path of the input file*/
-#define FILE "/Users/marcusgula/Desktop/testInput"
+#define FILE "sample_input.json"
 
 /*Possible statuses of nodes*/
 #define REJECTED "Rejected"
