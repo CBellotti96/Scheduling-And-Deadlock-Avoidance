@@ -3,18 +3,22 @@
 
 typedef struct job {
   int arrivalTime;
+  bool processExists;
+  int processArrival;
   int completionTime;
   int turnaroundTime;
   int weightedTurnaroundTime;
   int jobNumber;
   int priority;
   int memUnits;
+  int memAllocated;
   int runTime;
   int remainingTime;
-  int maxDevices;
-  int currDevices;
+  int devicesMax;
+  int devicesAllocated;
   int devicesRequested;
 } job;
+
 
 typedef struct node {
   job *job;

@@ -133,7 +133,7 @@ int main(int argc, char ** argv){
           j->arrivalTime = values[0];
           j->jobNumber = values[1];
           j->memUnits = values[2];
-          j->maxDevices = values[3];
+          j->devicesMax = values[3];
           j->remainingTime = j->runTime = values[4];
           j->priority = values[5];
 
@@ -143,6 +143,10 @@ int main(int argc, char ** argv){
           }
 
           //TODO
+        }
+
+        else{
+          printf("job rejected, not enough total memory or devices.");
         }
       }
 
