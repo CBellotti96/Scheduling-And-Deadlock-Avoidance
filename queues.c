@@ -1,42 +1,29 @@
-#include <types.h>
+#include "types.h"
 #include <stdlib.h>
 #include <stdio.h>
 
 //create null job
 job* newJob(){
-  job *temp = (job*)malloc(sizeof(job));
-  temp->arrivalTime = NULL;
-  temp->completionTime = NULL;
-  temp->turnaroundTime = NULL;
-  temp->weightedTurnaroundTime = NULL;
-  temp->jobNumber = NULL;
-  temp->priority = NULL;
-  temp->memUnits = NULL;
-  temp->runTime = NULL;
-  temp->remainingTime = NULL;
-  temp->maxDevices = NULL;
-  temp->currDevices = NULL;
-  temp->devicesRequested = NULL;
+  job *temp = (struct job*)malloc(sizeof(struct job));
   return temp;
 }
 //create new nodes
-node* newNode(job j){
-  node *temp = (node*)malloc(sizeof(node));
-  temp->job = j;
-  temp->next = NULL;
+node* newNode(){
+  node *temp = (struct node*)malloc(sizeof(struct node));
   return temp;
 }
 
 //create an empty queue
 queue *createQueue(){
-  queue *q = (queue*)malloc(sizeof(struct queue));
+  queue *q = (struct queue*)malloc(sizeof(struct queue));
   q->first = q->last = NULL;
   return q;
 }
 
 //add a job j to q
-void addToQueue(queue *q, job j){
-  node *temp = newNode(j);
+void addToQueue(queue *q, job *j){
+  node *temp = newNode();
+  temp->job = j;
   if (q->last == NULL){
     q->first = q->last = temp;
     return;
@@ -55,3 +42,5 @@ node *removeFromQueue(queue *q){
     q->last = NULL;
   return temp;
 }
+
+int main(int argc, char **argv);

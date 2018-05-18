@@ -33,7 +33,8 @@ int getNum(char *line){
   int i;
   for(i = 0; i < strlen(line); i++){
     if isdigit(line[i]){
-      return (atoi(&line[i]));
+      in
+      return (a);
     }
   }
 }

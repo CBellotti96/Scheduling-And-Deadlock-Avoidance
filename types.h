@@ -17,8 +17,8 @@ typedef struct job {
 } job;
 
 typedef struct node {
-  job job;
-  node *next;
+  job *job;
+  struct node *next;
 } node;
 
 typedef struct queue {
@@ -26,7 +26,7 @@ typedef struct queue {
 } queue;
 
 job *newJob();
-node *newNode(job j);
+node *newNode();
 queue *createQueue();
 void addToQueue(queue *q, job *j);
 node *removeFromQueue(queue *q);
