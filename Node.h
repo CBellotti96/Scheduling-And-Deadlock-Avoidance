@@ -1,6 +1,4 @@
 //Chris Bellotti & Ashley Gold
-
-
 #ifndef NODE_H_
 #define NODE_H_
 
@@ -9,7 +7,6 @@
 #include <string>
 #include <cctype>
 
-using namespace std;
 
 struct Node {
 	bool head;
