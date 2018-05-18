@@ -55,6 +55,36 @@ void getValues (char *line, int *values){
   }
 }
 
+bool hold_queue_1 (job *j1, job *j2){
+  return j1->remainingTime < j2->remainingTime; //SJF Scheduling
+}
+
+bool hold_queue_2 (job *j1, job *j2){
+  return j1->remainingTime < j2->remainingTime; //FIFO Scheduling
+}
+
+void submit_job(job *j){
+  if (j->memUnits > memTotal || j->maxDevices > devicesTotal){
+    printf("Job has been rejected due to insufficient memory or devices.");
+  }
+  else if(j->memUnits > memAvailable){
+    if(j->priority == 1){
+      addToQueue(holdQueue1, j);
+      sort(hold_queue_1);
+    }
+    else{
+      addToQueue(holdQueue2, j);
+      sort(hold_queue_2);
+    }
+  }
+  else{
+    //addToQueue(readyQueue, new Process(job));
+    memAvailable = memAvailable - j->memUnits
+  }
+}
+
+
+
 int main(int argc, char ** argv){
   //initializing queues
   queue *submitQueue = createQueue();
@@ -99,12 +129,18 @@ int main(int argc, char ** argv){
 
         if(values[2] < memTotal || values[3] < devicesTotal){
           job *j = newJob();
+          printf("new job!");
           j->arrivalTime = values[0];
           j->jobNumber = values[1];
           j->memUnits = values[2];
           j->maxDevices = values[3];
           j->remainingTime = j->runTime = values[4];
           j->priority = values[5];
+
+          if(j->memUnits <= memTotal){
+            //change something with time??
+            submit(j);
+          }
 
           //TODO
         }
