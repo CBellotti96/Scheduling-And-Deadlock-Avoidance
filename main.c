@@ -112,7 +112,7 @@ void timeStep(int time){
   }
 
   else{
-    runningQueue->first->job->remainingTime = runningQueue->first->job->remainingTime - (time - currTime);
+    runningQueue->first->job->remainingTime = runningQueue->first->job->remainingTime - (time - currentTime);
     currentTime = time;
   }
 }
