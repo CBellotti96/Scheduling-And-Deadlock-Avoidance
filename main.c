@@ -94,7 +94,7 @@ void submit_job(job *j){
   }
   else{
     j->processExists = true;
-    //something with time?
+    timeStep(currentTime);
     addToQueue(readyQueue, j);
     memAvailable = memAvailable - j->memUnits;
   }
@@ -114,7 +114,7 @@ void timeStep(int time){
   }
 
   else{
-    runningQueue->first->job->remainingTime = runningQueue->first->job->remainingTime - (time - currTime);
+    runningQueue->first->job->remainingTime = runningQueue->first->job->remainingTime - (time - currentTime);
     currentTime = time;
   }
 }
