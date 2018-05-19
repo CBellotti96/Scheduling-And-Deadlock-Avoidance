@@ -23,7 +23,7 @@ int devicesAvailable;
 int quantum;
 
 //initializing queues
-queue *submitQueue; 
+queue *submitQueue;
 queue *holdQueue1;
 queue *holdQueue2;
 queue *readyQueue;
@@ -95,7 +95,31 @@ void submit_job(job *j){
   }
 }
 
+void timeStep(int time){
+  if(time <= currTime){
+    return;
+  }
+  int num_quantums = (int) ((time-currTime)/quantum);
+  for(int i = 0; i < num_quantums; i++){
+    processQuantum();
+  }
 
+  if(runningQueue->first == NULL){
+    currTime = time;
+  }
+
+  else{
+    runningQueue->first->remainingTime = runningQueue->first->remainingTime - (time - currTime);
+    currTime = time;
+  }
+}
+
+void processQuantum(){
+  roundRobin();
+  if(readyQueue->first == NULL){
+
+  }
+}
 
 int main(int argc, char ** argv){
   //creating queues
