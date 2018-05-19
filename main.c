@@ -34,6 +34,8 @@ queue *completeQueue;
 void timeStep(int time);
 void processQuantum();
 void roundRobin();
+void request(int time, int jobNum, int deviceNum);
+void release(int time, int jobNum, int requestNum);
 
 void printArray(int *array, int size){
   for(int i = 0; i < size; i++){
@@ -155,6 +157,37 @@ void roundRobin(){
   }
   else{
     runningQueue->first = NULL;
+  }
+}
+
+void request(int time, int jobNum, int deviceNum){
+  if(runningQueue->first != NULL && runningQueue->first->job->jobNumber == jobNum){
+    if(devicesAvailable < deviceNum){
+      printf("Cannot complete request, not enough devices available \n");
+    }
+    else{
+      devicesAvailable -= deviceNum;
+      runningQueue->first->job->devicesAllocated += deviceNum;
+    }
+  }
+  else if(runningQueue->first == NULL){
+    printf("Invalid request. No job currently running. \n");
+  }
+  else {
+    printf("Invalid request. A different job is currently running. \n");
+  }
+}
+
+void release(int time, int jobNum, int deviceNum){
+  if(runningQueue->first != NULL && runningQueue->first->job->jobNumber == jobNum){
+    devicesAvailable += deviceNum;
+    runningQueue->first->job->devicesAllocated -= deviceNum;
+  }
+  else if (runningQueue->first == NULL){
+    printf("Invalid release. No job currently running. \n");
+  }
+  else{
+    printf("Invalid release. A different job is currently running. \n");
   }
 }
 
