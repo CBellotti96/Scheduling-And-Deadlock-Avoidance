@@ -88,7 +88,7 @@ void submit_job(job *j){
   }
   else{
     j->processExists = true;
-    //something with time?
+    timeStep(currentTime);
     addToQueue(readyQueue, j);
     memAvailable = memAvailable - j->memUnits;
   }
