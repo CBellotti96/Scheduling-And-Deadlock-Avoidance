@@ -109,15 +109,49 @@ void timeStep(int time){
   }
 
   else{
-    runningQueue->first->remainingTime = runningQueue->first->remainingTime - (time - currTime);
+    runningQueue->first->job->remainingTime = runningQueue->first->job->remainingTime - (time - currTime);
     currTime = time;
   }
 }
 
 void processQuantum(){
   roundRobin();
-  if(readyQueue->first == NULL){
+  if(runningQueue->first == NULL){
+    currTime += quantum;
+  }
+  if(runningQueue->first->job->remainingTime - quantum > 0){
+    currTime += quantum;
+    runningQueue->first->job->remainingTime -= quantum;
+  }
+  else{
+    currTime += runningQueue->first->job->remainingTime;
+    runningQueue->first->job->remainingTime = 0;
+  }
+}
 
+void roundRobin(){
+  if(runningQueue->first != NULL){
+    if(runningQueue->first->job->remainingTime <= 0){
+      devicesAvailable += runningQueue->first->job->devicesAllocated;
+      runningQueue->first->job->devicesAllocated = 0;
+
+      memAvailable += runningQueue->first->job->memAllocated;
+
+      runningQueue->first->job->completionTime = currTime;
+
+      addToQueue(completeQueue, runningQueue->first->job);
+    }
+
+    else{
+      addToQueue(readyQueue, runningQueue->first->job);
+    }
+  }
+  if(readyQueue->first != NULL){
+    runningQueue->first = readyQueue->first;
+    removeFromQueue(readyQueue);
+  }
+  else{
+    runningQueue->first = NULL;
   }
 }
 
