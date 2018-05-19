@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "queues.c"
+#include <stdbool.h>
 
 #define SIZE 1024 //used for file reading buffer
 #define CONFIG_ARGS 4
@@ -20,6 +21,15 @@ int memAvailable;
 int devicesTotal;
 int devicesAvailable;
 int quantum;
+
+//initializing queues
+queue *submitQueue; 
+queue *holdQueue1;
+queue *holdQueue2;
+queue *readyQueue;
+queue *waitQueue;
+queue *runningQueue;
+queue *completeQueue;
 
 void printArray(int *array, int size){
   for(int i = 0; i < size; i++){
@@ -64,36 +74,38 @@ bool hold_queue_2 (job *j1, job *j2){
 }
 
 void submit_job(job *j){
-  if (j->memUnits > memTotal || j->maxDevices > devicesTotal){
+  if (j->memUnits > memTotal || j->devicesMax > devicesTotal){
     printf("Job has been rejected due to insufficient memory or devices.");
   }
   else if(j->memUnits > memAvailable){
     if(j->priority == 1){
       addToQueue(holdQueue1, j);
-      sort(hold_queue_1);
+      holdQueue1->sort(hold_queue_1);
     }
     else{
       addToQueue(holdQueue2, j);
-      sort(hold_queue_2);
+      holdQueue2->sort(hold_queue_2);
     }
   }
   else{
-    //addToQueue(readyQueue, new Process(job));
-    memAvailable = memAvailable - j->memUnits
+    j->processExists = true;
+    //something with time?
+    addToQueue(readyQueue, j);
+    memAvailable = memAvailable - j->memUnits;
   }
 }
 
 
 
 int main(int argc, char ** argv){
-  //initializing queues
-  queue *submitQueue = createQueue();
-  queue *holdQueue1 = createQueue();
-  queue *holdQueue2 = createQueue();
-  queue *readyQueue = createQueue();
-  queue *waitQueue = createQueue();
-  queue *runningQueue = createQueue();
-  queue *completeQueue = createQueue();
+  //creating queues
+  submitQueue = createQueue();
+  holdQueue1 = createQueue();
+  holdQueue2 = createQueue();
+  readyQueue = createQueue();
+  waitQueue = createQueue();
+  runningQueue = createQueue();
+  completeQueue = createQueue();
 
   FILE * file = fopen(FILE_NAME, "r");
   FILE * file2 = fopen(FILE_NAME, "r");

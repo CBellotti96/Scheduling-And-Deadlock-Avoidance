@@ -1,6 +1,7 @@
 #include "types.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 //create null job
 job* newJob(){
