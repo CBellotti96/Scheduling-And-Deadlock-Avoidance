@@ -92,7 +92,6 @@ void submit_job(job *j){
   }
   else{
     j->processExists = true;
-    timeStep(currentTime);
     addToQueue(readyQueue, j);
     memAvailable = memAvailable - j->memUnits;
   }
@@ -211,7 +210,7 @@ int main(int argc, char ** argv){
           j->priority = values[5];
 
           if(j->memUnits <= memTotal){
-            //change something with time??
+            timeStep(currentTime);
             submit_job(j);
           }
 
@@ -228,6 +227,9 @@ int main(int argc, char ** argv){
         getValues(currLine, values);
         printArray(values, REQUEST_ARGS);
 
+        //timeStep(j->remainingTime);
+        //request(j->remainingTime, j->jobNumber, j->devicesMax);
+
         //TODO
       }
 
@@ -235,6 +237,9 @@ int main(int argc, char ** argv){
         values = (int *)malloc(sizeof(int)*RELEASE_ARGS);
         getValues(currLine, values);
         printArray(values, RELEASE_ARGS);
+
+        //timeStep(j->remainingTime);
+        //release(j->remainingTime, j->jobNumber, j->devicesMax);
 
         //TODO
       }
