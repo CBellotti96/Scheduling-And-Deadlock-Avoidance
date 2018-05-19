@@ -31,6 +31,10 @@ queue *waitQueue;
 queue *runningQueue;
 queue *completeQueue;
 
+void timeStep(int time);
+void processQuantum();
+void roundRobin();
+
 void printArray(int *array, int size){
   for(int i = 0; i < size; i++){
     printf("%d ", array[i]);
@@ -95,35 +99,35 @@ void submit_job(job *j){
 }
 
 void timeStep(int time){
-  if(time <= currTime){
+  if(time <= currentTime){
     return;
   }
-  int num_quantums = (int) ((time-currTime)/quantum);
+  int num_quantums = (int) ((time-currentTime)/quantum);
   for(int i = 0; i < num_quantums; i++){
-    processQuantum();
+    processQuantum(currentTime);
   }
 
   if(runningQueue->first == NULL){
-    currTime = time;
+    currentTime = time;
   }
 
   else{
     runningQueue->first->job->remainingTime = runningQueue->first->job->remainingTime - (time - currTime);
-    currTime = time;
+    currentTime = time;
   }
 }
 
 void processQuantum(){
   roundRobin();
   if(runningQueue->first == NULL){
-    currTime += quantum;
+    currentTime += quantum;
   }
   if(runningQueue->first->job->remainingTime - quantum > 0){
-    currTime += quantum;
+    currentTime += quantum;
     runningQueue->first->job->remainingTime -= quantum;
   }
   else{
-    currTime += runningQueue->first->job->remainingTime;
+    currentTime += runningQueue->first->job->remainingTime;
     runningQueue->first->job->remainingTime = 0;
   }
 }
@@ -136,7 +140,7 @@ void roundRobin(){
 
       memAvailable += runningQueue->first->job->memAllocated;
 
-      runningQueue->first->job->completionTime = currTime;
+      runningQueue->first->job->completionTime = currentTime;
 
       addToQueue(completeQueue, runningQueue->first->job);
     }
