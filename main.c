@@ -66,11 +66,11 @@ void getValues (char *line, int *values){
 }
 
 bool hold_queue_1 (job *j1, job *j2){
-  return j1->remainingTime < j2->remainingTime; //SJF Scheduling
+  return j1->runTime < j2->runTime; //SJF Scheduling
 }
 
 bool hold_queue_2 (job *j1, job *j2){
-  return j1->remainingTime < j2->remainingTime; //FIFO Scheduling
+  return j1->runTime < j2->runTime; //FIFO Scheduling
 }
 
 void submit_job(job *j){
@@ -80,11 +80,10 @@ void submit_job(job *j){
   else if(j->memUnits > memAvailable){
     if(j->priority == 1){
       addToQueue(holdQueue1, j);
-      holdQueue1->sort(hold_queue_1);
+      sortByRuntime(holdQueue1); //Sorting by runtime so SJF can be used
     }
     else{
       addToQueue(holdQueue2, j);
-      holdQueue2->sort(hold_queue_2);
     }
   }
   else{
@@ -209,7 +208,7 @@ int main(int argc, char ** argv){
 
           if(j->memUnits <= memTotal){
             //change something with time??
-            submit(j);
+            submit_job(j);
           }
 
           //TODO
