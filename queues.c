@@ -25,6 +25,7 @@ queue *createQueue(){
 void addToQueue(queue *q, job *j){
   node *temp = newNode();
   temp->job = j;
+  q->size++;
   if (q->last == NULL){
     q->first = q->last = temp;
     return;
@@ -41,6 +42,7 @@ node *removeFromQueue(queue *q){
   q->first = q->first->next;
   if(q->first == NULL)
     q->last = NULL;
+  q->size--;
   return temp;
 }
 
@@ -78,7 +80,7 @@ void sortByRuntime(queue *q){
     int swapped, i;
     node *ptr1;
     node *lptr = NULL;
- 
+
     /* Checking for empty list */
     if (start == NULL)
         return;
@@ -87,7 +89,7 @@ void sortByRuntime(queue *q){
         swapped = 0;
         ptr1 = start;
         while (ptr1->next != lptr){
-            if (ptr1->job->runTime > ptr1->next->job->runTime){ 
+            if (ptr1->job->runTime > ptr1->next->job->runTime){
                 swap(ptr1, ptr1->next);
                 swapped = 1;
             }

@@ -94,6 +94,7 @@ void submit_job(job *j){
   }
   else{
     j->processExists = true;
+    timeStep(currentTime);
     addToQueue(readyQueue, j);
     memAvailable = memAvailable - j->memUnits;
   }
@@ -158,7 +159,7 @@ void roundRobin(){
     runningQueue->first = NULL;
   }
 }
-
+//Look over this for bankers algorithm
 void request(int time, int jobNum, int deviceNum){
   if(runningQueue->first != NULL && runningQueue->first->job->jobNumber == jobNum){
     if(devicesAvailable < deviceNum){
@@ -167,6 +168,16 @@ void request(int time, int jobNum, int deviceNum){
     else{
       devicesAvailable -= deviceNum;
       runningQueue->first->job->devicesAllocated += deviceNum;
+      if(bankersCheck()){
+        return;
+      }
+      else{
+        devicesAvailable += deviceNum;
+        runningQueue->first->job->devicesAllocated -= deviceNum;
+        runningQueue->first->job->devicesRequested += deviceNum;
+        addToQueue(readyQueue, runningQueue->first->job);
+        removeFromQueue(runningQueue);
+      }
     }
   }
   else if(runningQueue->first == NULL){
@@ -178,16 +189,70 @@ void request(int time, int jobNum, int deviceNum){
 }
 
 void release(int time, int jobNum, int deviceNum){
-  if(runningQueue->first != NULL && runningQueue->first->job->jobNumber == jobNum){
+  if(runningQueue->first != NULL && runningQueue->first->job->jobNumber == jobNum && runningQueue->first->job->devicesAllocated >= deviceNum){
     devicesAvailable += deviceNum;
     runningQueue->first->job->devicesAllocated -= deviceNum;
   }
   else if (runningQueue->first == NULL){
     printf("Invalid release. No job currently running. \n");
   }
+  else if (runningQueue->first->job->devicesAllocated < deviceNum){
+    printf("Invalid release. Job is not currently holding this many devices. \n");
+  }
   else{
     printf("Invalid release. A different job is currently running. \n");
   }
+}
+
+bool bankersCheck(){
+  int processes = readyQueue->size + waitQueue->size + runningQueue->size;
+  int *need = (int *) malloc(processes  * sizeof(int));
+  int *allocated = (int *) malloc(processes * sizeof(int));
+  bool *finished = (bool *) malloc(processes * sizeof(bool));
+  int tempAvailable = devicesAvailable;
+  int i = 0;
+  if(runningQueue->first != NULL){
+    need[i] = runningQueue->first->job->devicesMax - runningQueue->first->job->devicesAllocated;
+    allocated[i] = runningQueue->first->job->devicesAllocated;
+    i++;
+  }
+  node *temp = newNode();
+  for(temp = readyQueue->first; temp != NULL; temp = temp->next){
+    need[i] = temp->job->devicesMax - temp->job->devicesAllocated;
+    allocated[i] = temp->job->devicesAllocated;
+    i++;
+  }
+  for(temp = waitQueue->first; temp != NULL; temp = temp->next){
+    need[i] = temp->job->devicesMax - temp->job->devicesAllocated;
+    allocated[i] = temp->job->devicesAllocated;
+    i++;
+  }
+  int count = 0;
+  while (count < processes){
+    bool canComplete = false;
+    for (int p = 0; p < processes; p++){
+      if(finished[p] == 0){
+        if(need[p] > work){
+          continue;
+        }
+        tempAvailable += allocated[p];
+        finished[p] = 1;
+        canComplete = true;
+      }
+    }
+    if (canComplete == false){
+      printf("Cannot complete request, system would be in unsafe state. \n");
+      free(need);
+      free(allocated);
+      free(finished);
+      return false;
+    }
+  }
+  printf("Request being filled, system is in a safe state. \n");
+  free(need);
+  free(allocated);
+  free(finished);
+  return true;
 }
 
 int main(int argc, char ** argv){
@@ -243,7 +308,7 @@ int main(int argc, char ** argv){
           j->priority = values[5];
 
           if(j->memUnits <= memTotal){
-            timeStep(currentTime);
+            //change something with time??
             submit_job(j);
           }
 
@@ -260,9 +325,6 @@ int main(int argc, char ** argv){
         getValues(currLine, values);
         printArray(values, REQUEST_ARGS);
 
-        //timeStep(j->remainingTime);
-        //request(j->remainingTime, j->jobNumber, j->devicesMax);
-
         //TODO
       }
 
@@ -270,9 +332,6 @@ int main(int argc, char ** argv){
         values = (int *)malloc(sizeof(int)*RELEASE_ARGS);
         getValues(currLine, values);
         printArray(values, RELEASE_ARGS);
-
-        //timeStep(j->remainingTime);
-        //release(j->remainingTime, j->jobNumber, j->devicesMax);
 
         //TODO
       }

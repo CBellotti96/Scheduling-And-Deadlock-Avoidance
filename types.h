@@ -28,6 +28,7 @@ typedef struct node {
 
 typedef struct queue {
   node *first, *last;
+  int size;
 } queue;
 
 job *newJob();
