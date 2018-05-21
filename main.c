@@ -134,6 +134,129 @@ void processQuantum(){
   }
 }
 
+void roundRobin(){
+  if(runningQueue->first != NULL){
+    if(runningQueue->first->job->remainingTime <= 0){
+      devicesAvailable += runningQueue->first->job->devicesAllocated;
+      runningQueue->first->job->devicesAllocated = 0;
+
+      memAvailable += runningQueue->first->job->memAllocated;
+
+      runningQueue->first->job->completionTime = currentTime;
+
+      addToQueue(completeQueue, runningQueue->first->job);
+    }
+
+    else{
+      addToQueue(readyQueue, runningQueue->first->job);
+    }
+  }
+  if(readyQueue->first != NULL){
+    runningQueue->first = readyQueue->first;
+    removeHead(readyQueue);
+  }
+  else{
+    runningQueue->first = NULL;
+  }
+}
+
+void release(int time, int jobNum, int deviceNum){
+  if(runningQueue->first != NULL && runningQueue->first->job->jobNumber == jobNum && runningQueue->first->job->devicesAllocated >= deviceNum){
+    devicesAvailable += deviceNum;
+    runningQueue->first->job->devicesAllocated -= deviceNum;
+  }
+  else if (runningQueue->first == NULL){
+    printf("Invalid release. No job currently running. \n");
+  }
+  else if (runningQueue->first->job->devicesAllocated < deviceNum){
+    printf("Invalid release. Job is not currently holding this many devices. \n");
+  }
+  else{
+    printf("Invalid release. A different job is currently running. \n");
+  }
+}
+
+bool bankersCheck(){
+  int processes = readyQueue->size + waitQueue->size + runningQueue->size;
+  int *need = (int *) malloc(processes  * sizeof(int));
+  int *allocated = (int *) malloc(processes * sizeof(int));
+  bool *finished = (bool *) malloc(processes * sizeof(bool));
+  int tempAvailable = devicesAvailable;
+  int i = 0;
+  if(runningQueue->first != NULL){
+    need[i] = runningQueue->first->job->devicesMax - runningQueue->first->job->devicesAllocated;
+    allocated[i] = runningQueue->first->job->devicesAllocated;
+    i++;
+  }
+  node *temp = newNode();
+  for(temp = readyQueue->first; temp != NULL; temp = temp->next){
+    need[i] = temp->job->devicesMax - temp->job->devicesAllocated;
+    allocated[i] = temp->job->devicesAllocated;
+    i++;
+  }
+  for(temp = waitQueue->first; temp != NULL; temp = temp->next){
+    need[i] = temp->job->devicesMax - temp->job->devicesAllocated;
+    allocated[i] = temp->job->devicesAllocated;
+    i++;
+  }
+  int count = 0;
+  while (count < processes){
+    bool canComplete = false;
+    for (int p = 0; p < processes; p++){
+      if(finished[p] == 0){
+        if(need[p] > work){ //work is undeclared?
+          continue;
+        }
+        tempAvailable += allocated[p];
+        finished[p] = 1;
+        canComplete = true;
+      }
+    }
+    if (canComplete == false){
+      printf("Cannot complete request, system would be in unsafe state. \n");
+      free(need);
+      free(allocated);
+      free(finished);
+      free(temp);
+      return false;
+    }
+  }
+  printf("Request being filled, system is in a safe state. \n");
+  free(need);
+  free(allocated);
+  free(finished);
+  free(temp);
+  return true;
+}
+
+void request(int time, int jobNum, int deviceNum){
+  if(runningQueue->first != NULL && runningQueue->first->job->jobNumber == jobNum){
+    if(devicesAvailable < deviceNum){
+      printf("Cannot complete request, not enough devices available \n");
+    }
+    else{
+      devicesAvailable -= deviceNum;
+      runningQueue->first->job->devicesAllocated += deviceNum;
+      if(bankersCheck()){
+        return;
+      }
+      else{
+        devicesAvailable += deviceNum;
+        runningQueue->first->job->devicesAllocated -= deviceNum;
+        runningQueue->first->job->devicesRequested += deviceNum;
+        addToQueue(readyQueue, runningQueue->first->job);
+        removeHead(runningQueue);
+      }
+    }
+  }
+  else if(runningQueue->first == NULL){
+    printf("Invalid request. No job currently running. \n");
+  }
+  else {
+    printf("Invalid request. A different job is currently running. \n");
+  }
+}
+
 void completeJob(int time, int jobNum){
   if(runningQueue->first->job->jobNumber == jobNum){
     //make devices and memory available
@@ -185,129 +308,6 @@ void completeJob(int time, int jobNum){
       }
     }
   }
-}
-
-void roundRobin(){
-  if(runningQueue->first != NULL){
-    if(runningQueue->first->job->remainingTime <= 0){
-      devicesAvailable += runningQueue->first->job->devicesAllocated;
-      runningQueue->first->job->devicesAllocated = 0;
-
-      memAvailable += runningQueue->first->job->memAllocated;
-
-      runningQueue->first->job->completionTime = currentTime;
-
-      addToQueue(completeQueue, runningQueue->first->job);
-    }
-
-    else{
-      addToQueue(readyQueue, runningQueue->first->job);
-    }
-  }
-  if(readyQueue->first != NULL){
-    runningQueue->first = readyQueue->first;
-    removeHead(readyQueue);
-  }
-  else{
-    runningQueue->first = NULL;
-  }
-}
-
-void request(int time, int jobNum, int deviceNum){
-  if(runningQueue->first != NULL && runningQueue->first->job->jobNumber == jobNum){
-    if(devicesAvailable < deviceNum){
-      printf("Cannot complete request, not enough devices available \n");
-    }
-    else{
-      devicesAvailable -= deviceNum;
-      runningQueue->first->job->devicesAllocated += deviceNum;
-      if(bankersCheck()){
-        return;
-      }
-      else{
-        devicesAvailable += deviceNum;
-        runningQueue->first->job->devicesAllocated -= deviceNum;
-        runningQueue->first->job->devicesRequested += deviceNum;
-        addToQueue(readyQueue, runningQueue->first->job);
-        removeHead(runningQueue);
-      }
-    }
-  }
-  else if(runningQueue->first == NULL){
-    printf("Invalid request. No job currently running. \n");
-  }
-  else {
-    printf("Invalid request. A different job is currently running. \n");
-  }
-}
-
-void release(int time, int jobNum, int deviceNum){
-  if(runningQueue->first != NULL && runningQueue->first->job->jobNumber == jobNum && runningQueue->first->job->devicesAllocated >= deviceNum){
-    devicesAvailable += deviceNum;
-    runningQueue->first->job->devicesAllocated -= deviceNum;
-  }
-  else if (runningQueue->first == NULL){
-    printf("Invalid release. No job currently running. \n");
-  }
-  else if (runningQueue->first->job->devicesAllocated < deviceNum){
-    printf("Invalid release. Job is not currently holding this many devices. \n");
-  }
-  else{
-    printf("Invalid release. A different job is currently running. \n");
-  }
-}
-
-bool bankersCheck(){
-  int processes = readyQueue->size + waitQueue->size + runningQueue->size;
-  int *need = (int *) malloc(processes  * sizeof(int));
-  int *allocated = (int *) malloc(processes * sizeof(int));
-  bool *finished = (bool *) malloc(processes * sizeof(bool));
-  int tempAvailable = devicesAvailable;
-  int i = 0;
-  if(runningQueue->first != NULL){
-    need[i] = runningQueue->first->job->devicesMax - runningQueue->first->job->devicesAllocated;
-    allocated[i] = runningQueue->first->job->devicesAllocated;
-    i++;
-  }
-  node *temp = newNode();
-  for(temp = readyQueue->first; temp != NULL; temp = temp->next){
-    need[i] = temp->job->devicesMax - temp->job->devicesAllocated;
-    allocated[i] = temp->job->devicesAllocated;
-    i++;
-  }
-  for(temp = waitQueue->first; temp != NULL; temp = temp->next){
-    need[i] = temp->job->devicesMax - temp->job->devicesAllocated;
-    allocated[i] = temp->job->devicesAllocated;
-    i++;
-  }
-  int count = 0;
-  while (count < processes){
-    bool canComplete = false;
-    for (int p = 0; p < processes; p++){
-      if(finished[p] == 0){
-        if(need[p] > work){
-          continue;
-        }
-        tempAvailable += allocated[p];
-        finished[p] = 1;
-        canComplete = true;
-      }
-    }
-    if (canComplete == false){
-      printf("Cannot complete request, system would be in unsafe state. \n");
-      free(need);
-      free(allocated);
-      free(finished);
-      free(temp);
-      return false;
-    }
-  }
-  printf("Request being filled, system is in a safe state. \n");
-  free(need);
-  free(allocated);
-  free(finished);
-  free(temp);
-  return true;
 }
 
 int main(int argc, char ** argv){
