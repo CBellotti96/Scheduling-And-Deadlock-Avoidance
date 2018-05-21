@@ -134,6 +134,59 @@ void processQuantum(){
   }
 }
 
+void completeJob(int time, int jobNum){
+  if(runningQueue->first->job->jobNumber == jobNum){
+    //make devices and memory available
+    devicesAvailable += runningQueue->first->job->devicesAllocated;
+    runningQueue->first->job->devicesAllocated = 0;
+    memAvailable += runningQueue->first->job->memAllocated;
+    runningQueue->first->job->memAllocated = 0;
+    runningQueue->first->job->completionTime = currentTime;
+    addToQueue(completeQueue, runningQueue->first->job);
+    removeHead(runningQueue);
+
+    //check waitQueue first
+    node *temp = newNode();
+    for(temp = waitQueue->first; temp != NULL; temp = temp->next){
+      if(temp->job->devicesRequested <= devicesAvailable){
+        //allocate and call bankersCheck()
+        devicesAvailable -= temp->job->devicesRequested;
+        temp->job->devicesAllocated += temp->job->devicesRequested;
+        if(!bankersCheck()){
+          devicesAvailable += temp->job->devicesRequested;
+          temp->job->devicesAllocated -= temp->job->devicesRequested;
+          continue;
+        }
+        else{
+          temp->job->devicesRequested = 0;
+          addToQueue(readyQueue, temp->job);
+          removeFromQueue(waitQueue, temp->job);
+        }
+      }
+    }
+    if(holdQueue1->first != NULL){
+      for(temp = holdQueue1->first; temp != NULL; temp = temp->next){
+        if(memAvailable >= temp->job->memUnits){
+          addToQueue(readyQueue, temp->job);
+          memAvailable -= temp->job->memUnits;
+          temp->job->memAllocated = temp->job->memUnits;
+          removeFromQueue(holdQueue1, temp->job);
+        }
+      }
+    }
+    if(holdQueue2->first != NULL){
+      for(temp = holdQueue2->first; temp != NULL; temp = temp->next){
+        if(memAvailable >= temp->job->memUnits){
+          addToQueue(readyQueue, temp->job);
+          memAvailable -= temp->job->memUnits;
+          temp->job->memAllocated = temp->job->memUnits;
+          removeFromQueue(holdQueue2, temp->job);
+        }
+      }
+    }
+  }
+}
+
 void roundRobin(){
   if(runningQueue->first != NULL){
     if(runningQueue->first->job->remainingTime <= 0){
@@ -153,13 +206,13 @@ void roundRobin(){
   }
   if(readyQueue->first != NULL){
     runningQueue->first = readyQueue->first;
-    removeFromQueue(readyQueue);
+    removeHead(readyQueue);
   }
   else{
     runningQueue->first = NULL;
   }
 }
-//Look over this for bankers algorithm
+
 void request(int time, int jobNum, int deviceNum){
   if(runningQueue->first != NULL && runningQueue->first->job->jobNumber == jobNum){
     if(devicesAvailable < deviceNum){
@@ -176,7 +229,7 @@ void request(int time, int jobNum, int deviceNum){
         runningQueue->first->job->devicesAllocated -= deviceNum;
         runningQueue->first->job->devicesRequested += deviceNum;
         addToQueue(readyQueue, runningQueue->first->job);
-        removeFromQueue(runningQueue);
+        removeHead(runningQueue);
       }
     }
   }
@@ -245,6 +298,7 @@ bool bankersCheck(){
       free(need);
       free(allocated);
       free(finished);
+      free(temp);
       return false;
     }
   }
@@ -252,6 +306,7 @@ bool bankersCheck(){
   free(need);
   free(allocated);
   free(finished);
+  free(temp);
   return true;
 }
 

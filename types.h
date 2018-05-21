@@ -35,5 +35,8 @@ job *newJob();
 node *newNode();
 queue *createQueue();
 void addToQueue(queue *q, job *j);
-node *removeFromQueue(queue *q);
+node *removeHead(queue *q);
+node *removeFromQueue(queue *q, job *j);
+void swap(node *a, node *b);
+void sortByRuntime(queue *q);
 #endif /*TYPES_H*/

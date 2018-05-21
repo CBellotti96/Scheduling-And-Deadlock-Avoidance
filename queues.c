@@ -35,7 +35,7 @@ void addToQueue(queue *q, job *j){
 }
 
 //remove a job from the queue
-node *removeFromQueue(queue *q){
+node *removeHead(queue *q){
   if(q->first == NULL)
     return NULL;
   node *temp = q->first;
@@ -44,6 +44,24 @@ node *removeFromQueue(queue *q){
     q->last = NULL;
   q->size--;
   return temp;
+}
+//not 100% sure of this but lets pretend its fine
+node *removeFromQueue(queue *q, job *j){
+  if(q->first == NULL)
+    return NULL;;
+  node *temp = q->first;
+  if(temp->job->jobNumber == j->jobNumber){
+    return (removeHead(q));
+  }
+  for(temp = q->first; temp != NULL; temp = temp->next){
+      if(temp->next->job->jobNumber == j->jobNumber){
+        node *next = temp->next->next;
+        node *save = temp->next;
+        temp->next = next;
+        q->size--;
+        return(save);
+      }
+  }
 }
 
 /* function to swap data of two nodes a and b*/
