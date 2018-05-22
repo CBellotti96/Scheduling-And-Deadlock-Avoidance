@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include "queues.c"
 #include <stdbool.h>
+#include <json/json.h>
 
 #define SIZE 1024 //used for file reading buffer
 #define CONFIG_ARGS 4
@@ -312,6 +313,101 @@ void completeJob(int time, int jobNum){
   }
 }
 
+void generateJSON(){
+  char fileName[SIZE];
+  strcpy(fileName, "D");
+  strcpy(fileName, "%d", currentTime);
+  strcpy(fileName, ".json");
+
+  FILE * fileOut = fopen(fileName, "w");
+
+  json_object *json = json_object_new_object();
+
+  json_object *currentTimeInt = json_object_new_int(currentTime);
+  json_object *totalMemoryInt = json_object_new_int(memTotal);
+  json_object *availableMemoryInt = json_object_new_int(memAvailable);
+  json_object *totalDevicesInt = json_object_new_int(devicesTotal);
+  json_object *availableDevicesInt = json_object_new_int(devicesAvailable);
+  json_object *quantumInt = json_object_new_int(quantum);
+  //need turnaround and weightedTurnaroundTime
+
+  json_object *readyQueueArray = json_object_new_array();
+  node *temp = newNode();
+  for(temp = readyQueue->first; temp != NULL; temp = temp->next){
+    json_object_array_add(json_object_new_int(temp->job->jobNumber));
+  }
+
+  json_object *runningQueueInt = json_object_new_int(runningQueue->first->job->jobNumber);
+
+  json_object *submitQueueArray = json_object_new_array();
+  for(temp = submitQueue->first; temp != NULL; temp = temp->next){
+    json_object_array_add(json_object_new_int(temp->job->jobNumber));
+  }
+
+  json_object *holdQueue2Array = json_object_new_array();
+  for(temp = holdQueue2->first; temp != NULL; temp = temp->next){
+    json_object_array_add(json_object_new_int(temp->job->jobNumber));
+  }
+
+  json_object *holdQueue1Array = json_object_new_array();
+  for(temp = holdQueue1->first; temp != NULL; temp = temp->next){
+    json_object_array_add(json_object_new_int(temp->job->jobNumber));
+  }
+
+  json_object *completeQueueArray = json_object_new_array();
+  for(temp = completeQueue->first; temp != NULL; temp = temp->next){
+    json_object_array_add(json_object_new_int(temp->job->jobNumber));
+  }
+
+  json_object *waitQueueArray = json_object_new_array();
+  for(temp = waitQueue->first; temp != NULL; temp = temp->next){
+    json_object_array_add(json_object_new_int(temp->job->jobNumber));
+  }
+
+  json_object_object_add(json, "Current Time", currentTimeInt);
+  json_object_object_add(json, "Total Memory", totalMemoryInt);
+  json_object_object_add(json, "Available Memory", availableMemoryInt);
+  json_object_object_add(json, "Total Devices", totalDevicesInt);
+  json_object_object_add(json, "Available Devices", availableDevicesInt);
+  json_object_object_add(json, "Quantum", quantumInt);
+  //need turnaround and weightedTurnaroundTime
+
+  json_object_object_add(json, "Ready Queue", readyQueueArray);
+  json_object_object_add(json, "Running", runningQueueInt);
+  json_object_object_add(json, "Submit Queue", submitQueueArray);
+  json_object_object_add(json, "Hold Queue 2", holdQueue2Array);
+  json_object_object_add(json, "Hold Queue 1", holdQueue1Array);
+  json_object_object_add(json, "Complete Queue", completeQueueArray);
+  json_object_object_add(json, "Wait Queue", waitQueueArray);
+
+  json_object *jobArray = json_object_new_array();
+
+  for(temp = acceptedJobs->first; temp != NULL; temp = temp->next){
+    json_object *jobObject = json_object_new_object();
+    json_object *arrivalTimeInt = json_object_new_int(temp->job->arrivalTime);
+    json_object_object_add(jobObject, "Arrival Time", arrivalTimeInt);
+    if(temp->job->devicesRequested != 0 || temp->job->devicesAllocated != 0){
+      json_object *devicesAllocatedInt = json_object_new_int(temp->job->devicesAllocated);
+      json_object_object_add(jobObject, "Devices Allocated", devicesAllocatedInt);
+    }
+    json_object *jobNumberInt = json_object_new_int(temp->job->jobNumber);
+    json_object_object_add(jobObject, "Job Number", jobNumberInt);
+    json_object *remainingTimeInt = json_object_new_int(temp->job->remainingTime);
+    json_object_object_add(jobObject, "Remaining Time", remainingTimeInt);
+    if(temp->job->completionTime != 0){
+      json_object *completionTimeInt = json_object_new_int(temp->job->completionTime);
+    }
+    json_object_array_add(jobArray, jobObject);
+  }
+
+  json_object_object_add(json, "Jobs", jobArray);  
+
+  char *finalObject = json_object_get_string(json);
+  fputs(finalObject, fileOut);
+
+  fclose(fileOut);
+}
+
 void output(){
   printf("\n");
   printf("******System Information****** \n");
@@ -322,6 +418,13 @@ void output(){
   printf("Available Devices: %d \n", devicesAvailable);
   printf("Quantum: %d \n", quantum);
   //implement turnaroundtime and weightedTurnaroundTime!!!
+
+  printf("******ReadyQueue****** \n");
+  printf("[");
+  for(temp = readyQueue->first; temp != NULL; temp = temp->next){
+    printf("%d, ", temp->job->jobNumber);
+  }
+  printf("] \n");
 
   printf("******RunningQueue****** \n");
   if(runningQueue->first != NULL){
