@@ -251,6 +251,29 @@ void release(int time, int jobNum, int deviceNum){
   if(runningQueue->first != NULL && runningQueue->first->job->jobNumber == jobNum && runningQueue->first->job->devicesAllocated >= deviceNum){
     devicesAvailable += deviceNum;
     runningQueue->first->job->devicesAllocated -= deviceNum;
+
+    addToQueue(readyQueue, runningQueue->first->job);
+    removeHead(runningQueue);
+    quantumSlice = 0;
+
+    node *temp = newNode();
+    for(temp = waitQueue->first; temp != NULL; temp = temp->next){
+      if(temp->job->devicesRequested <= devicesAvailable){
+        temp->job->devicesAllocated += temp->job->devicesRequested;
+        devicesAvailable -= temp->job->devicesRequested;
+
+        if(!bankersCheck()){
+          temp->job->devicesAllocated -= temp->job->devicesRequested;
+          devicesAvailable += temp->job->devicesRequested;
+          continue;
+        }
+        else{
+          temp->job->devicesRequested = 0;
+          addToQueue(readyQueue, temp->job);
+          removeFromQueue(waitQueue, temp->job);
+        }
+      }
+    }
   }
   else if (runningQueue->first == NULL){
     printf("Invalid release. No job currently running. \n");
@@ -341,20 +364,28 @@ bool bankersCheck(){
 void request(int time, int jobNum, int deviceNum){
   if(runningQueue->first != NULL && runningQueue->first->job->jobNumber == jobNum){
     if(devicesAvailable < deviceNum){
-      printf("Cannot complete request, not enough devices available \n");
+      printf("Cannot complete request at this time, not enough devices available \n");
+      runningQueue->first->job->devicesRequested += deviceNum;
+      addToQueue(waitQueue, runningQueue->first->job);
+      removeHead(runningQueue);
+      quantumSlice = 0;
     }
     else{
       devicesAvailable -= deviceNum;
       runningQueue->first->job->devicesAllocated += deviceNum;
       if(bankersCheck()){
+        addToQueue(readyQueue, runningQueue->first->job);
+        removeHead(runningQueue);
+        quantumSlice = 0;
         return;
       }
       else{
         devicesAvailable += deviceNum;
         runningQueue->first->job->devicesAllocated -= deviceNum;
         runningQueue->first->job->devicesRequested += deviceNum;
-        addToQueue(readyQueue, runningQueue->first->job);
+        addToQueue(waitQueue, runningQueue->first->job);
         removeHead(runningQueue);
+        quantumSlice = 0;
       }
     }
   }
