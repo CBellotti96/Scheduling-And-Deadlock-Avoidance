@@ -31,7 +31,6 @@ typedef struct queue {
   int size;
 } queue;
 
-void *printJob(job *j);
 job *newJob();
 node *newNode();
 queue *createQueue();

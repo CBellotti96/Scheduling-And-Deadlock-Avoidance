@@ -3,24 +3,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-void* printJob(job *j){
-  printf("Arrival: %d \n", j->processArrival);
-  printf("Process exists?");
-  printf(j->processExists ? "true\n" : "false\n");
-  printf("Completion Time: %d\n", j->completionTime);
-  printf("turnaround Time: %d\n", j->turnaroundTime);
-  printf("weightedTurnaround Time: %d\n", j->weightedTurnaroundTime);
-  printf("Job #: %d\n", j->jobNumber);
-  printf("priority: %d\n", j->priority);
-  printf("memUnits: %d\n", j->memUnits);
-  printf("memAllocated: %d\n", j->memAllocated);
-  printf("runtime: %d\n", j->runTime);
-  printf("remainingTime: %d\n", j->remainingTime);
-  printf("devicesMax: %d\n", j->devicesMax);
-  printf("devicesAllocated: %d\n", j->devicesAllocated);
-  printf("devicesRequested: %d\n", j->devicesRequested);
-}
-
 //create null job
 job* newJob(){
   job *temp = (struct job*)malloc(sizeof(struct job));
