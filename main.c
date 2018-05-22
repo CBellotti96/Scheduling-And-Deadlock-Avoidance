@@ -4,7 +4,7 @@
 #include <ctype.h>
 #include "queues.c"
 #include <stdbool.h>
-#include <json/json.h>
+//#include <json/json.h>
 
 #define SIZE 1024 //used for file reading buffer
 #define CONFIG_ARGS 4
@@ -335,7 +335,7 @@ void completeJob(int time, int jobNum){
   }
 }
 
-void generateJSON(){
+/*void generateJSON(){
   char fileName[SIZE];
   strcpy(fileName, "D");
   strcpy(fileName, "%d", currentTime);
@@ -428,7 +428,7 @@ void generateJSON(){
   fputs(finalObject, fileOut);
 
   fclose(fileOut);
-}
+}*/
 
 void output(){
   printf("\n");
@@ -510,7 +510,7 @@ void output(){
   printf("] \n");
   printf("} \n");
 
-  generateJSON();
+  //generateJSON();
 }
 
 int main(int argc, char ** argv){
@@ -557,7 +557,6 @@ int main(int argc, char ** argv){
 
         if(values[2] < memTotal || values[3] < devicesTotal){
           job *j = newJob();
-          printf("new job!");
           j->arrivalTime = values[0];
           j->jobNumber = values[1];
           j->memUnits = values[2];
