@@ -31,9 +31,6 @@ queue *waitQueue;
 queue *runningQueue;
 queue *completeQueue;
 
-//list of accepted jobs
-queue *acceptedJobs;
-
 void timeStep(int time);
 void processQuantum();
 void roundRobin();
@@ -249,7 +246,6 @@ void request(int time, int jobNum, int deviceNum){
         runningQueue->first->job->devicesRequested += deviceNum;
         addToQueue(readyQueue, runningQueue->first->job);
         removeHead(runningQueue);
-        addToQueue(acceptedJobs, runningQueue->first->job);
       }
     }
   }
@@ -312,6 +308,62 @@ void completeJob(int time, int jobNum){
       }
     }
   }
+}
+
+void output(){
+  printf("\n");
+  printf("******System Information****** \n");
+  printf("Current Time: %d \n", currentTime);
+  printf("Total Memory: %d \n", memTotal);
+  printf("Available Memory: %d \n", memAvailable);
+  printf("Total Devices: %d \n", devicesTotal);
+  printf("Available Devices: %d \n", devicesAvailable);
+  printf("Quantum: %d \n", quantum);
+  //implement turnaroundtime and weightedTurnaroundTime!!!
+
+  printf("******RunningQueue****** \n");
+  if(runningQueue->first != NULL){
+    printf("%d \n", runningQueue->first->job->jobNumber);
+  }
+  else{
+    printf("empty \n");
+  }
+
+  printf("******SubmitQueue****** \n");
+  printf("[");
+  node *temp = submitQueue->first;
+  for(temp = submitQueue->first; temp != NULL; temp = temp->next){
+    printf("%d, ", temp->job->jobNumber);
+  }
+  printf("] \n");
+
+  printf("******HoldQueue2****** \n");
+  printf("[");
+  for(temp = holdQueue2->first; temp != NULL; temp = temp->next){
+    printf("%d, ", temp->job->jobNumber);
+  }
+  printf("] \n");
+
+  printf("******HoldQueue1****** \n");
+  printf("[");
+  for(temp = holdQueue1->first; temp != NULL; temp = temp->next){
+    printf("%d, ", temp->job->jobNumber);
+  }
+  printf("] \n");
+
+  printf("******CompleteQueue****** \n");
+  printf("[");
+  for(temp = completeQueue->first; temp != NULL; temp = temp->next){
+    printf("%d, ", temp->job->jobNumber);
+  }
+  printf("] \n");
+
+  printf("******WaitQueue****** \n");
+  printf("[");
+  for(temp = waitQueue->first; temp != NULL; temp = temp->next){
+    printf("%d, ", temp->job->jobNumber);
+  }
+  printf("] \n");
 }
 
 int main(int argc, char ** argv){
