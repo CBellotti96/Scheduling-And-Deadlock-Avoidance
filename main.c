@@ -207,7 +207,7 @@ bool bankersCheck(){
     bool canComplete = false;
     for (int p = 0; p < processes; p++){
       if(finished[p] == 0){
-        if(need[p] > tempAvailable){ //work is undeclared?
+        if(need[p] > tempAvailable){
           continue;
         }
         tempAvailable += allocated[p];
@@ -421,6 +421,7 @@ void output(){
 
   printf("******ReadyQueue****** \n");
   printf("[");
+  node *temp = newNode();
   for(temp = readyQueue->first; temp != NULL; temp = temp->next){
     printf("%d, ", temp->job->jobNumber);
   }
@@ -436,7 +437,6 @@ void output(){
 
   printf("******SubmitQueue****** \n");
   printf("[");
-  node *temp = submitQueue->first;
   for(temp = submitQueue->first; temp != NULL; temp = temp->next){
     printf("%d, ", temp->job->jobNumber);
   }
@@ -543,7 +543,7 @@ int main(int argc, char ** argv){
           j->remainingTime = j->runTime = values[4];
           j->priority = values[5];
           addToQueue(acceptedJobs, j);
-          timeStep(j->arrivaleTime);
+          timeStep(j->arrivalTime);
           submit_job(j);
         }
 
