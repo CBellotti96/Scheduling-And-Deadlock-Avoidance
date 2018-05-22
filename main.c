@@ -84,6 +84,58 @@ void printGlobals(){
   printf("Quantum: %d\n", quantum);
 }
 
+bool bankersCheck(){
+  int processes = readyQueue->size + waitQueue->size + runningQueue->size;
+  int *need = (int *) malloc(processes  * sizeof(int));
+  int *allocated = (int *) malloc(processes * sizeof(int));
+  bool *finished = (bool *) malloc(processes * sizeof(bool));
+  int tempAvailable = devicesAvailable;
+  int i = 0;
+  if(runningQueue->first != NULL){
+    need[i] = runningQueue->first->job->devicesMax - runningQueue->first->job->devicesAllocated;
+    allocated[i] = runningQueue->first->job->devicesAllocated;
+    i++;
+  }
+  node *temp = newNode();
+  for(temp = readyQueue->first; temp != NULL; temp = temp->next){
+    need[i] = temp->job->devicesMax - temp->job->devicesAllocated;
+    allocated[i] = temp->job->devicesAllocated;
+    i++;
+  }
+  for(temp = waitQueue->first; temp != NULL; temp = temp->next){
+    need[i] = temp->job->devicesMax - temp->job->devicesAllocated;
+    allocated[i] = temp->job->devicesAllocated;
+    i++;
+  }
+  int count = 0;
+  while (count < processes){
+    bool canComplete = false;
+    for (int p = 0; p < processes; p++){
+      if(finished[p] == 0){
+        if(need[p] > tempAvailable){
+          continue;
+        }
+        tempAvailable += allocated[p];
+        finished[p] = 1;
+        canComplete = true;
+      }
+    }
+    if (canComplete == false){
+      printf("Cannot complete request, system would be in unsafe state. \n");
+      free(need);
+      free(allocated);
+      free(finished);
+      free(temp);
+      return false;
+    }
+  }
+  printf("Request being filled, system is in a safe state. \n");
+  free(need);
+  free(allocated);
+  free(finished);
+  free(temp);
+  return true;
+}
 
 void submitJob(job *j){
   if (j->memUnits > memTotal || j->devicesMax > devicesTotal){
@@ -319,59 +371,6 @@ float averageWeightedTTime(){
   return((float)sum/(float)numElements);
 }
 
-bool bankersCheck(){
-  int processes = readyQueue->size + waitQueue->size + runningQueue->size;
-  int *need = (int *) malloc(processes  * sizeof(int));
-  int *allocated = (int *) malloc(processes * sizeof(int));
-  bool *finished = (bool *) malloc(processes * sizeof(bool));
-  int tempAvailable = devicesAvailable;
-  int i = 0;
-  if(runningQueue->first != NULL){
-    need[i] = runningQueue->first->job->devicesMax - runningQueue->first->job->devicesAllocated;
-    allocated[i] = runningQueue->first->job->devicesAllocated;
-    i++;
-  }
-  node *temp = newNode();
-  for(temp = readyQueue->first; temp != NULL; temp = temp->next){
-    need[i] = temp->job->devicesMax - temp->job->devicesAllocated;
-    allocated[i] = temp->job->devicesAllocated;
-    i++;
-  }
-  for(temp = waitQueue->first; temp != NULL; temp = temp->next){
-    need[i] = temp->job->devicesMax - temp->job->devicesAllocated;
-    allocated[i] = temp->job->devicesAllocated;
-    i++;
-  }
-  int count = 0;
-  while (count < processes){
-    bool canComplete = false;
-    for (int p = 0; p < processes; p++){
-      if(finished[p] == 0){
-        if(need[p] > tempAvailable){
-          continue;
-        }
-        tempAvailable += allocated[p];
-        finished[p] = 1;
-        canComplete = true;
-      }
-    }
-    if (canComplete == false){
-      printf("Cannot complete request, system would be in unsafe state. \n");
-      free(need);
-      free(allocated);
-      free(finished);
-      free(temp);
-      return false;
-    }
-  }
-  printf("Request being filled, system is in a safe state. \n");
-  free(need);
-  free(allocated);
-  free(finished);
-  free(temp);
-  return true;
-}
-
 void request(int time, int jobNum, int deviceNum){
   if(runningQueue->first != NULL && runningQueue->first->job->jobNumber == jobNum){
     if(devicesAvailable < deviceNum){
@@ -408,9 +407,7 @@ void request(int time, int jobNum, int deviceNum){
   }
 }
 
-<<<<<<< HEAD
-void generateJSON(){
-=======
+/*void generateJSON(){
 void completeJob(int time, int jobNum){
   if(runningQueue->first->job->jobNumber == jobNum){
     //make devices and memory available
@@ -462,108 +459,6 @@ void completeJob(int time, int jobNum){
       }
     }
   }
-}
-
-/*void generateJSON(){
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> 5941895fac22dde8df8032d181a6a3bc394a9219
-=======
->>>>>>> 5941895fac22dde8df8032d181a6a3bc394a9219
-=======
->>>>>>> 5941895fac22dde8df8032d181a6a3bc394a9219
-  char fileName[SIZE];
-  strcpy(fileName, "D");
-  strcpy(fileName, "%d", currentTime);
-  strcpy(fileName, ".json");
-
-  FILE * fileOut = fopen(fileName, "w");
-
-  json_object *json = json_object_new_object();
-
-  json_object *currentTimeInt = json_object_new_int(currentTime);
-  json_object *totalMemoryInt = json_object_new_int(memTotal);
-  json_object *availableMemoryInt = json_object_new_int(memAvailable);
-  json_object *totalDevicesInt = json_object_new_int(devicesTotal);
-  json_object *availableDevicesInt = json_object_new_int(devicesAvailable);
-  json_object *quantumInt = json_object_new_int(quantum);
-  //need turnaround and weightedTurnaroundTime
-
-  json_object *readyQueueArray = json_object_new_array();
-  node *temp = newNode();
-  for(temp = readyQueue->first; temp != NULL; temp = temp->next){
-    json_object_array_add(json_object_new_int(temp->job->jobNumber));
-  }
-
-  json_object *runningQueueInt = json_object_new_int(runningQueue->first->job->jobNumber);
-
-  json_object *submitQueueArray = json_object_new_array();
-  for(temp = submitQueue->first; temp != NULL; temp = temp->next){
-    json_object_array_add(json_object_new_int(temp->job->jobNumber));
-  }
-
-  json_object *holdQueue2Array = json_object_new_array();
-  for(temp = holdQueue2->first; temp != NULL; temp = temp->next){
-    json_object_array_add(json_object_new_int(temp->job->jobNumber));
-  }
-
-  json_object *holdQueue1Array = json_object_new_array();
-  for(temp = holdQueue1->first; temp != NULL; temp = temp->next){
-    json_object_array_add(json_object_new_int(temp->job->jobNumber));
-  }
-
-  json_object *completeQueueArray = json_object_new_array();
-  for(temp = completeQueue->first; temp != NULL; temp = temp->next){
-    json_object_array_add(json_object_new_int(temp->job->jobNumber));
-  }
-
-  json_object *waitQueueArray = json_object_new_array();
-  for(temp = waitQueue->first; temp != NULL; temp = temp->next){
-    json_object_array_add(json_object_new_int(temp->job->jobNumber));
-  }
-
-  json_object_object_add(json, "Current Time", currentTimeInt);
-  json_object_object_add(json, "Total Memory", totalMemoryInt);
-  json_object_object_add(json, "Available Memory", availableMemoryInt);
-  json_object_object_add(json, "Total Devices", totalDevicesInt);
-  json_object_object_add(json, "Available Devices", availableDevicesInt);
-  json_object_object_add(json, "Quantum", quantumInt);
-  //need turnaround and weightedTurnaroundTime
-
-  json_object_object_add(json, "Ready Queue", readyQueueArray);
-  json_object_object_add(json, "Running", runningQueueInt);
-  json_object_object_add(json, "Submit Queue", submitQueueArray);
-  json_object_object_add(json, "Hold Queue 2", holdQueue2Array);
-  json_object_object_add(json, "Hold Queue 1", holdQueue1Array);
-  json_object_object_add(json, "Complete Queue", completeQueueArray);
-  json_object_object_add(json, "Wait Queue", waitQueueArray);
-
-  json_object *jobArray = json_object_new_array();
-
-  for(temp = acceptedJobs->first; temp != NULL; temp = temp->next){
-    json_object *jobObject = json_object_new_object();
-    json_object *arrivalTimeInt = json_object_new_int(temp->job->arrivalTime);
-    json_object_object_add(jobObject, "Arrival Time", arrivalTimeInt);
-    if(temp->job->devicesRequested != 0 || temp->job->devicesAllocated != 0){
-      json_object *devicesAllocatedInt = json_object_new_int(temp->job->devicesAllocated);
-      json_object_object_add(jobObject, "Devices Allocated", devicesAllocatedInt);
-    }
-    json_object *jobNumberInt = json_object_new_int(temp->job->jobNumber);
-    json_object_object_add(jobObject, "Job Number", jobNumberInt);
-    json_object *remainingTimeInt = json_object_new_int(temp->job->remainingTime);
-    json_object_object_add(jobObject, "Remaining Time", remainingTimeInt);
-    if(temp->job->completionTime != 0){
-      json_object *completionTimeInt = json_object_new_int(temp->job->completionTime);
-    }
-    json_object_array_add(jobArray, jobObject);
-  }
-
-  json_object_object_add(json, "Jobs", jobArray);
-
-  char *finalObject = json_object_get_string(json);
-  fputs(finalObject, fileOut);
-
-  fclose(fileOut);
 }*/
 
 void output(){
@@ -649,6 +544,70 @@ void output(){
   //generateJSON();
 }
 
+void readByLineNum(int lineNum, char c){
+  FILE * file = fopen(FILE_NAME, "r");
+  char ignore[SIZE];
+  for (int i=0; i<lineNum-1; i++){
+    fgets(ignore, sizeof(ignore), file);
+  }
+  if(c=='C'){
+    fscanf(file, "C %d M=%d S=%d Q=%d", &currentTime, &memTotal, &devicesTotal, &quantum);
+    memAvailable = memTotal;
+    devicesAvailable = devicesTotal;
+    printf("C\n");
+    printGlobals();
+  }
+  else if(c=='A'){
+    int tempArrival, tempJob, tempMem, tempDevices, tempRemaining, tempPriority;
+    fscanf(file, "A %d J=%d M=%d S=%d R=%d P=%d", &tempArrival, &tempJob, &tempMem, &tempDevices, &tempRemaining, &tempPriority);
+    if(tempMem < memTotal || tempDevices < devicesTotal){
+      job *j = newJob();
+      j->arrivalTime = tempArrival;
+      j->jobNumber = tempJob;
+      j->memUnits = tempMem;
+      j->devicesMax = tempDevices;
+      j->remainingTime = j->runTime = tempRemaining;
+      j->priority = tempPriority;
+      addToQueue(acceptedJobs, j);
+      printf("A\n");
+      //printJob(j);
+      //printf("\n");
+      timeStep(j->arrivalTime);
+      submitJob(j);
+    }
+    else{
+      printf("job rejected, not enough total memory or devices.");
+    }
+  }
+  else if(c=='Q'){
+    printf("Q\n");
+    int time, jobNum, devices;
+    fscanf(file, "Q %d J=%d D=%d", &time, &jobNum, &devices);
+    timeStep(time);
+    request(time, jobNum, devices);
+  }
+  else if(c=='L'){
+    printf("L\n");
+    int time, jobNum, devices;
+    fscanf(file, "L %d, J=%d, D=%d", &time, &jobNum, &devices);
+    timeStep(time);
+    release(time, jobNum, devices);
+  }
+  else if(c=='D'){
+    printf("D\n");
+    int time;
+    fscanf(file, "D %d", &time);
+    if(time == 9999){
+      printf("End of input file. Dumping final state.\n");
+    }
+    else{
+      timeStep(time);
+    }
+    output();
+  }
+}
+
+
 int main(int argc, char ** argv){
   //creating queues
   submitQueue = createQueue();
@@ -670,82 +629,16 @@ int main(int argc, char ** argv){
     return(0);
   }
   else{
-    getline(&nextLine,&fileBuffer,file2); //get initial line to look ahead for next task
-    while(getline(&currLine,&fileBuffer,file) >= 0){ //current task
-      getline(&nextLine,&fileBuffer,file2); //next task
-      currentTime = getTime(currLine);
-      nextTime = getTime(nextLine);
-      int * values;
-
-      if(currLine[0] == 'C'){
-        values = (int *)malloc(sizeof(int)*CONFIG_ARGS);
-        getValues(currLine,values);
-        printArray(values, CONFIG_ARGS);
-        currentTime = values[0];
-        memTotal = memAvailable = values[1];
-        devicesTotal = devicesAvailable = values[2];
-        quantum = values[3];
-        printf("C\n");
-        printGlobals();
+    char c;
+    int lineNum=0;
+    while(fgets(currLine, SIZE, file) != NULL){
+      int jj = -1;
+      while(++jj < strlen(currLine)){
+        lineNum++;
+        if ((c=currLine[jj]) != -1) break;
       }
-
-      else if(currLine[0] == 'A'){
-        values = (int *)malloc(sizeof(int)*ARRIVAL_ARGS);
-        getValues(currLine, values);
-
-        if(values[2] < memTotal || values[3] < devicesTotal){
-          job *j = newJob();
-          j->arrivalTime = values[0];
-          j->jobNumber = values[1];
-          j->memUnits = values[2];
-          j->devicesMax = values[3];
-          j->remainingTime = j->runTime = values[4];
-          j->priority = values[5];
-          addToQueue(acceptedJobs, j);
-          printf("A\n");
-          printJob(j);
-          printf("\n");
-          timeStep(j->arrivalTime);
-          submitJob(j);
-        }
-
-        else{
-          printf("job rejected, not enough total memory or devices.");
-        }
-        break;
-      }
-
-      else if(currLine[0] == 'Q'){
-        values = (int *)malloc(sizeof(int)*REQUEST_ARGS);
-        getValues(currLine, values);
-        timeStep(values[0]);
-        request(values[0], values[1], values[2]);
-        printf("Q\n");
-        break;
-      }
-
-      else if(currLine[0] == 'L'){
-        values = (int *)malloc(sizeof(int)*RELEASE_ARGS);
-        getValues(currLine, values);
-        timeStep(values[0]);
-        release(values[0], values[1], values[2]);
-        printf("L\n");
-        break;
-      }
-
-      else if(currLine[0] == 'D'){
-        values = (int *)malloc(sizeof(int)*DISPLAY_ARGS);
-        getValues(currLine, values);
-        timeStep(values[0]);
-        output();
-        printf("D\n");
-        break;
-      }
-
-      else{
-        printf("Unrecognized character in file. Exiting...");
-        return(0);
-      }
+      readByLineNum(lineNum, c);
+      //printf("%c %d \n",c, lineNum);
     }
   }
   return(0);
