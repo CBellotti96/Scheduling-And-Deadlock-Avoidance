@@ -178,6 +178,28 @@ void release(int time, int jobNum, int deviceNum){
   }
 }
 
+float averageTurnaroundTime(){
+  int sum, numElements = 0;
+  node *temp = completeQueue->first;
+  while(temp!=NULL){
+    sum += temp->job->turnaroundTime;
+    temp = temp->next;
+    numElements += 1;
+  }
+  return((float)sum/(float)numElements);
+}
+
+float averageWeightedTTime(){
+  int sum, numElements = 0;
+  node *temp = completeQueue->first;
+  while(temp!=NULL){
+    sum += temp->job->weightedTurnaroundTime;
+    temp = temp->next;
+    numElements += 1;
+  }
+  return((float)sum/(float)numElements);
+}
+
 bool bankersCheck(){
   int processes = readyQueue->size + waitQueue->size + runningQueue->size;
   int *need = (int *) malloc(processes  * sizeof(int));
@@ -397,7 +419,7 @@ int main(int argc, char ** argv){
   waitQueue = createQueue();
   runningQueue = createQueue();
   completeQueue = createQueue();
-  acceptedjobs = createQueue();
+  acceptedJobs = createQueue();
 
   FILE * file = fopen(FILE_NAME, "r");
   FILE * file2 = fopen(FILE_NAME, "r");
