@@ -4,7 +4,7 @@
 #include <ctype.h>
 #include "queues.c"
 #include <stdbool.h>
-#include <json/json.h>
+//#include <json/json.h>
 
 #define SIZE 1024 //used for file reading buffer
 #define CONFIG_ARGS 4
@@ -22,6 +22,7 @@ int memAvailable;
 int devicesTotal;
 int devicesAvailable;
 int quantum;
+int quantumSlice;
 
 //initializing queues
 queue *submitQueue;
@@ -74,15 +75,17 @@ void getValues (char *line, int *values){
   }
 }
 
-bool hold_queue_1 (job *j1, job *j2){
-  return j1->runTime < j2->runTime; //SJF Scheduling
+void printGlobals(){
+  printf("Current time: %d\n", currentTime);
+  printf("memory total: %d\n", memTotal);
+  printf("memory available: %d\n", memAvailable);
+  printf("devices total: %d\n", devicesTotal);
+  printf("devices available: %d\n", devicesAvailable);
+  printf("Quantum: %d\n", quantum);
 }
 
-bool hold_queue_2 (job *j1, job *j2){
-  return j1->runTime < j2->runTime; //FIFO Scheduling
-}
 
-void submit_job(job *j){
+void submitJob(job *j){
   if (j->memUnits > memTotal || j->devicesMax > devicesTotal){
     printf("Job has been rejected due to insufficient memory or devices.");
   }
@@ -97,59 +100,72 @@ void submit_job(job *j){
   }
   else{
     j->processExists = true;
-    timeStep(currentTime);
+    //timeStep();
     addToQueue(readyQueue, j);
     memAvailable = memAvailable - j->memUnits;
   }
+  printJob(j);
+  printGlobals();
 }
 
-void timeStep(int time){
-  if(time <= currentTime){
-    return;
-  }
-  int num_quantums = (int) ((time-currentTime)/quantum);
-  for(int i = 0; i < num_quantums; i++){
-    processQuantum(currentTime);
-  }
+void completeJob(int time, int jobNum){
+  if(runningQueue->first->job->jobNumber == jobNum){
+    //make devices and memory available
+    devicesAvailable += runningQueue->first->job->devicesAllocated;
+    runningQueue->first->job->devicesAllocated = 0;
+    memAvailable += runningQueue->first->job->memAllocated;
+    runningQueue->first->job->memAllocated = 0;
+    runningQueue->first->job->completionTime = currentTime;
+    addToQueue(completeQueue, runningQueue->first->job);
+    removeHead(runningQueue);
 
-  if(runningQueue->first == NULL){
-    currentTime = time;
-  }
-
-  else{
-    runningQueue->first->job->remainingTime = runningQueue->first->job->remainingTime - (time - currentTime);
-    currentTime = time;
-  }
-}
-
-void processQuantum(){
-  roundRobin();
-  if(runningQueue->first == NULL){
-    currentTime += quantum;
-  }
-  if(runningQueue->first->job->remainingTime - quantum > 0){
-    currentTime += quantum;
-    runningQueue->first->job->remainingTime -= quantum;
-  }
-  else{
-    currentTime += runningQueue->first->job->remainingTime;
-    runningQueue->first->job->remainingTime = 0;
+    //check waitQueue first
+    node *temp = newNode();
+    for(temp = waitQueue->first; temp != NULL; temp = temp->next){
+      if(temp->job->devicesRequested <= devicesAvailable){
+        //allocate and call bankersCheck()
+        devicesAvailable -= temp->job->devicesRequested;
+        temp->job->devicesAllocated += temp->job->devicesRequested;
+        if(!bankersCheck()){
+          devicesAvailable += temp->job->devicesRequested;
+          temp->job->devicesAllocated -= temp->job->devicesRequested;
+          continue;
+        }
+        else{
+          temp->job->devicesRequested = 0;
+          addToQueue(readyQueue, temp->job);
+          removeFromQueue(waitQueue, temp->job);
+        }
+      }
+    }
+    if(holdQueue1->first != NULL){
+      for(temp = holdQueue1->first; temp != NULL; temp = temp->next){
+        if(memAvailable >= temp->job->memUnits){
+          addToQueue(readyQueue, temp->job);
+          memAvailable -= temp->job->memUnits;
+          temp->job->memAllocated = temp->job->memUnits;
+          removeFromQueue(holdQueue1, temp->job);
+        }
+      }
+    }
+    if(holdQueue2->first != NULL){
+      for(temp = holdQueue2->first; temp != NULL; temp = temp->next){
+        if(memAvailable >= temp->job->memUnits){
+          addToQueue(readyQueue, temp->job);
+          memAvailable -= temp->job->memUnits;
+          temp->job->memAllocated = temp->job->memUnits;
+          removeFromQueue(holdQueue2, temp->job);
+        }
+      }
+    }
   }
 }
 
 void roundRobin(){
   if(runningQueue->first != NULL){
     if(runningQueue->first->job->remainingTime <= 0){
-      devicesAvailable += runningQueue->first->job->devicesAllocated;
-      runningQueue->first->job->devicesAllocated = 0;
-
-      memAvailable += runningQueue->first->job->memAllocated;
-
-      runningQueue->first->job->completionTime = currentTime;
-
-      addToQueue(completeQueue, runningQueue->first->job);
+      completeJob(currentTime, runningQueue->first->job->jobNumber);
     }
-
     else{
       addToQueue(readyQueue, runningQueue->first->job);
     }
@@ -161,6 +177,85 @@ void roundRobin(){
   else{
     runningQueue->first = NULL;
   }
+}
+
+void processQuantum(){
+  roundRobin();
+  if(runningQueue->first == NULL){
+    currentTime += quantum;
+    return;
+  }
+  if(runningQueue->first->job->remainingTime - quantum > 0){
+    currentTime += quantum;
+    runningQueue->first->job->remainingTime -= quantum;
+  }
+  else{
+    currentTime += runningQueue->first->job->remainingTime;
+    runningQueue->first->job->remainingTime = 0;
+    quantumSlice = 0;
+  }
+}
+
+void resumeQuantum(int slice){
+  if(runningQueue->first == NULL){
+    currentTime += slice;
+  }
+  else{
+    if(slice < runningQueue->first->job->remainingTime){
+      runningQueue->first->job->remainingTime -= slice;
+      currentTime += slice;
+    }
+    else{
+      currentTime += runningQueue->first->job->remainingTime;
+      runningQueue->first->job->remainingTime = 0;
+      quantumSlice = 0;
+      roundRobin();
+    }
+  }
+}
+
+void timeStep(int time){
+  while(currentTime < time){
+    if(runningQueue->first == NULL){
+      quantumSlice = 0;
+    }
+
+    if(quantumSlice != 0){
+      if(quantumSlice <= time-currentTime){
+        resumeQuantum(quantumSlice);
+        quantumSlice = 0;
+      }
+      else{
+        quantumSlice -= time-currentTime;
+        resumeQuantum(time-currentTime);
+        return;
+      }
+    }
+    int numQuantums = (int) ((time-currentTime)/quantum);
+    quantumSlice = quantum - ((time-currentTime) % quantum);
+
+    for(int i = 0; i < numQuantums; i++){
+      processQuantum();
+    }
+
+    roundRobin();
+
+    if(runningQueue->first == NULL){
+      currentTime = time;
+    }
+    else{
+      if(time - currentTime < runningQueue->first->job->remainingTime){
+        runningQueue->first->job->remainingTime -= (time - currentTime);
+        currentTime = time;
+      }
+      else{
+        currentTime += runningQueue->first->job->remainingTime;
+        runningQueue->first->job->remainingTime = 0;
+        quantumSlice = 0;
+      }
+    }
+  }
+  return;
 }
 
 void release(int time, int jobNum, int deviceNum){
@@ -282,6 +377,9 @@ void request(int time, int jobNum, int deviceNum){
   }
 }
 
+<<<<<<< HEAD
+void generateJSON(){
+=======
 void completeJob(int time, int jobNum){
   if(runningQueue->first->job->jobNumber == jobNum){
     //make devices and memory available
@@ -335,7 +433,14 @@ void completeJob(int time, int jobNum){
   }
 }
 
-void generateJSON(){
+/*void generateJSON(){
+<<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> 5941895fac22dde8df8032d181a6a3bc394a9219
+=======
+>>>>>>> 5941895fac22dde8df8032d181a6a3bc394a9219
+=======
+>>>>>>> 5941895fac22dde8df8032d181a6a3bc394a9219
   char fileName[SIZE];
   strcpy(fileName, "D");
   strcpy(fileName, "%d", currentTime);
@@ -428,7 +533,7 @@ void generateJSON(){
   fputs(finalObject, fileOut);
 
   fclose(fileOut);
-}
+}*/
 
 void output(){
   printf("\n");
@@ -510,7 +615,7 @@ void output(){
   printf("] \n");
   printf("} \n");
 
-  generateJSON();
+  //generateJSON();
 }
 
 int main(int argc, char ** argv){
@@ -549,6 +654,8 @@ int main(int argc, char ** argv){
         memTotal = memAvailable = values[1];
         devicesTotal = devicesAvailable = values[2];
         quantum = values[3];
+        printf("C\n");
+        printGlobals();
       }
 
       else if(currLine[0] == 'A'){
@@ -557,7 +664,6 @@ int main(int argc, char ** argv){
 
         if(values[2] < memTotal || values[3] < devicesTotal){
           job *j = newJob();
-          printf("new job!");
           j->arrivalTime = values[0];
           j->jobNumber = values[1];
           j->memUnits = values[2];
@@ -565,8 +671,11 @@ int main(int argc, char ** argv){
           j->remainingTime = j->runTime = values[4];
           j->priority = values[5];
           addToQueue(acceptedJobs, j);
+          printf("A\n");
+          printJob(j);
+          printf("\n");
           timeStep(j->arrivalTime);
-          submit_job(j);
+          submitJob(j);
         }
 
         else{
@@ -580,6 +689,7 @@ int main(int argc, char ** argv){
         getValues(currLine, values);
         timeStep(values[0]);
         request(values[0], values[1], values[2]);
+        printf("Q\n");
         break;
       }
 
@@ -588,6 +698,7 @@ int main(int argc, char ** argv){
         getValues(currLine, values);
         timeStep(values[0]);
         release(values[0], values[1], values[2]);
+        printf("L\n");
         break;
       }
 
@@ -596,6 +707,7 @@ int main(int argc, char ** argv){
         getValues(currLine, values);
         timeStep(values[0]);
         output();
+        printf("D\n");
         break;
       }
 
