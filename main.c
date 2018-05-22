@@ -181,7 +181,45 @@ void roundRobin(){
   else{
     runningQueue->first = NULL;
   }
+<<<<<<< HEAD
 =======
+void processQuantum(){
+=======
+}
+
+void completeQuantum(){
+>>>>>>> 277c6f0e64c68bee018edc4b5cd9b5f7c5fb48a4
+  if(runningQueue->first == NULL){
+    quantumSlice = 0;
+    return;
+  }
+<<<<<<< HEAD
+  completeQuantum();
+}
+
+=======
+
+  if(runningQueue->first->job->remainingTime < quantumSlice){
+    currentTime += runningQueue->first->job->remainingTime;
+    runningQueue->first->job->remainingTime = 0;
+  }
+  else{
+    currentTime += quantumSlice;
+    runningQueue->first->job->remainingTime -= quantumSlice;
+  }
+
+  quantumSlice = quantum;
+}
+
+void beginQuantum(int step){
+  if(runningQueue->first != NULL){
+    runningQueue->first->job->remainingTime -= step;
+  }
+
+  currentTime += step;
+  quantumSlice -= (quantum - (step % quantum));
+}
+
 void processQuantum(){
   if(runningQueue->first == NULL){
     currentTime += quantum;
@@ -190,6 +228,7 @@ void processQuantum(){
   completeQuantum();
 }
 
+>>>>>>> 277c6f0e64c68bee018edc4b5cd9b5f7c5fb48a4
 void resumeQuantum(int step){
   if(runningQueue->first != NULL){
     runningQueue->first->job->remainingTime -= step;
