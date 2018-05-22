@@ -99,7 +99,6 @@ void submit_job(job *j){
     j->processExists = true;
     timeStep(currentTime);
     addToQueue(readyQueue, j);
-    addToQueue(acceptedJobs, j);
     memAvailable = memAvailable - j->memUnits;
   }
 }
@@ -250,6 +249,7 @@ void request(int time, int jobNum, int deviceNum){
         runningQueue->first->job->devicesRequested += deviceNum;
         addToQueue(readyQueue, runningQueue->first->job);
         removeHead(runningQueue);
+        addToQueue(acceptedJobs, runningQueue->first->job);
       }
     }
   }
