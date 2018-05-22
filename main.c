@@ -30,6 +30,8 @@ queue *readyQueue;
 queue *waitQueue;
 queue *runningQueue;
 queue *completeQueue;
+queue *acceptedJobs;
+
 
 void timeStep(int time);
 void processQuantum();
@@ -364,6 +366,26 @@ void output(){
     printf("%d, ", temp->job->jobNumber);
   }
   printf("] \n");
+
+  printf("******Jobs****** \n");
+  printf("[ \n");
+  for(temp = acceptedJobs->first; temp != NULL; temp = temp->next){
+    printf("{ \n");
+    printf("Arrival Time: %d, \n", temp->job->arrivalTime);
+    if(temp->job->devicesRequested != 0 || temp->job->devicesAllocated != 0){
+      printf("Devices Allocated: %d, \n", temp->job->devicesAllocated);
+    }
+    printf("Job Number: %d, \n", temp->job->jobNumber);
+    printf("Remaining Time: %d, \n", temp->job->remainingTime);
+    if(temp->job->completionTime != 0){
+      printf("Completion Time: %d, \n", temp->job->completionTime);
+    }
+    printf("}, \n");
+  }
+  printf("] \n");
+  printf("} \n");
+
+  generateJSON();
 }
 
 int main(int argc, char ** argv){
@@ -375,6 +397,7 @@ int main(int argc, char ** argv){
   waitQueue = createQueue();
   runningQueue = createQueue();
   completeQueue = createQueue();
+  acceptedjobs = createQueue();
 
   FILE * file = fopen(FILE_NAME, "r");
   FILE * file2 = fopen(FILE_NAME, "r");
@@ -417,6 +440,7 @@ int main(int argc, char ** argv){
           j->devicesMax = values[3];
           j->remainingTime = j->runTime = values[4];
           j->priority = values[5];
+          addToQueue(acceptedJobs, j);
 
           if(j->memUnits <= memTotal){
             //change something with time??
