@@ -45,6 +45,7 @@ node *removeHead(queue *q){
   q->size--;
   return temp;
 }
+
 //not 100% sure of this but lets pretend its fine
 node *removeFromQueue(queue *q, job *j){
   if(q->first == NULL)

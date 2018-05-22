@@ -31,6 +31,9 @@ queue *waitQueue;
 queue *runningQueue;
 queue *completeQueue;
 
+//list of accepted jobs
+queue *acceptedJobs;
+
 void timeStep(int time);
 void processQuantum();
 void roundRobin();
@@ -96,6 +99,7 @@ void submit_job(job *j){
     j->processExists = true;
     timeStep(currentTime);
     addToQueue(readyQueue, j);
+    addToQueue(acceptedJobs, j);
     memAvailable = memAvailable - j->memUnits;
   }
 }
