@@ -229,7 +229,7 @@ bool bankersCheck(){
     bool canComplete = false;
     for (int p = 0; p < processes; p++){
       if(finished[p] == 0){
-        if(need[p] > work){ //work is undeclared?
+        if(need[p] > tempAvailable){ //work is undeclared?
           continue;
         }
         tempAvailable += allocated[p];
