@@ -400,7 +400,7 @@ void generateJSON(){
     json_object_array_add(jobArray, jobObject);
   }
 
-  json_object_object_add(json, "Jobs", jobArray);  
+  json_object_object_add(json, "Jobs", jobArray);
 
   char *finalObject = json_object_get_string(json);
   fputs(finalObject, fileOut);
@@ -532,7 +532,6 @@ int main(int argc, char ** argv){
       else if(currLine[0] == 'A'){
         values = (int *)malloc(sizeof(int)*ARRIVAL_ARGS);
         getValues(currLine, values);
-        printArray(values, ARRIVAL_ARGS);
 
         if(values[2] < memTotal || values[3] < devicesTotal){
           job *j = newJob();
@@ -544,42 +543,38 @@ int main(int argc, char ** argv){
           j->remainingTime = j->runTime = values[4];
           j->priority = values[5];
           addToQueue(acceptedJobs, j);
-
-          if(j->memUnits <= memTotal){
-            //change something with time??
-            submit_job(j);
-          }
-
-          //TODO
+          timeStep(j->arrivaleTime);
+          submit_job(j);
         }
 
         else{
           printf("job rejected, not enough total memory or devices.");
         }
+        break;
       }
 
       else if(currLine[0] == 'Q'){
         values = (int *)malloc(sizeof(int)*REQUEST_ARGS);
         getValues(currLine, values);
-        printArray(values, REQUEST_ARGS);
-
-        //TODO
+        timeStep(values[0]);
+        request(values[0], values[1], values[2]);
+        break;
       }
 
       else if(currLine[0] == 'L'){
         values = (int *)malloc(sizeof(int)*RELEASE_ARGS);
         getValues(currLine, values);
-        printArray(values, RELEASE_ARGS);
-
-        //TODO
+        timeStep(values[0]);
+        release(values[0], values[1], values[2]);
+        break;
       }
 
       else if(currLine[0] == 'D'){
         values = (int *)malloc(sizeof(int)*DISPLAY_ARGS);
         getValues(currLine, values);
-        printArray(values, DISPLAY_ARGS);
-
-        //TODO
+        timeStep(values[0]);
+        output();
+        break;
       }
 
       else{
