@@ -74,15 +74,17 @@ void getValues (char *line, int *values){
   }
 }
 
-bool hold_queue_1 (job *j1, job *j2){
-  return j1->runTime < j2->runTime; //SJF Scheduling
+void printGlobals(){
+  printf("Current time: %d\n", currentTime);
+  printf("memory total: %d\n", memTotal);
+  printf("memory available: %d\n", memAvailable);
+  printf("devices total: %d\n", devicesTotal);
+  printf("devices available: %d\n", devicesAvailable);
+  printf("Quantum: %d\n", quantum);
 }
 
-bool hold_queue_2 (job *j1, job *j2){
-  return j1->runTime < j2->runTime; //FIFO Scheduling
-}
 
-void submit_job(job *j){
+void submitJob(job *j){
   if (j->memUnits > memTotal || j->devicesMax > devicesTotal){
     printf("Job has been rejected due to insufficient memory or devices.");
   }
@@ -97,10 +99,12 @@ void submit_job(job *j){
   }
   else{
     j->processExists = true;
-    timeStep(currentTime);
+    //timeStep();
     addToQueue(readyQueue, j);
     memAvailable = memAvailable - j->memUnits;
   }
+  printJob(j);
+  printGlobals();
 }
 
 void timeStep(int time){
@@ -549,6 +553,8 @@ int main(int argc, char ** argv){
         memTotal = memAvailable = values[1];
         devicesTotal = devicesAvailable = values[2];
         quantum = values[3];
+        printf("C\n");
+        printGlobals();
       }
 
       else if(currLine[0] == 'A'){
@@ -564,8 +570,11 @@ int main(int argc, char ** argv){
           j->remainingTime = j->runTime = values[4];
           j->priority = values[5];
           addToQueue(acceptedJobs, j);
+          printf("A\n");
+          printJob(j);
+          printf("\n");
           timeStep(j->arrivalTime);
-          submit_job(j);
+          submitJob(j);
         }
 
         else{
@@ -579,6 +588,7 @@ int main(int argc, char ** argv){
         getValues(currLine, values);
         timeStep(values[0]);
         request(values[0], values[1], values[2]);
+        printf("Q\n");
         break;
       }
 
@@ -587,6 +597,7 @@ int main(int argc, char ** argv){
         getValues(currLine, values);
         timeStep(values[0]);
         release(values[0], values[1], values[2]);
+        printf("L\n");
         break;
       }
 
@@ -595,6 +606,7 @@ int main(int argc, char ** argv){
         getValues(currLine, values);
         timeStep(values[0]);
         output();
+        printf("D\n");
         break;
       }
 
