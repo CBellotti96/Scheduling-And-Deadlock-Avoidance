@@ -100,6 +100,7 @@ void submitJob(job *j){
   }
   else{
     j->processExists = true;
+    //timeStep();
     addToQueue(readyQueue, j);
     memAvailable = memAvailable - j->memUnits;
   }
@@ -178,72 +179,82 @@ void roundRobin(){
   }
 }
 
-void completeQuantum(){
-  if(runningQueue->first == NULL){
-    quantumSlice = 0;
-    return;
-  }
-
-  if(runningQueue->first->job->remainingTime < quantumSlice){
-    currentTime += runningQueue->first->job->remainingTime;
-    runningQueue->first->job->remainingTime = 0;
-  }
-  else{
-    currentTime += quantumSlice;
-    runningQueue->first->job->remainingTime -= quantumSlice;
-  }
-
-  quantumSlice = quantum;
-}
-
-void beginQuantum(int step){
-  if(runningQueue->first != NULL){
-    runningQueue->first->job->remainingTime -= step;
-  }
-
-  currentTime += step;
-  quantumSlice -= (quantum - (step % quantum));
-}
-
 void processQuantum(){
+  roundRobin();
   if(runningQueue->first == NULL){
     currentTime += quantum;
     return;
   }
-  completeQuantum();
+  if(runningQueue->first->job->remainingTime - quantum > 0){
+    currentTime += quantum;
+    runningQueue->first->job->remainingTime -= quantum;
+  }
+  else{
+    currentTime += runningQueue->first->job->remainingTime;
+    runningQueue->first->job->remainingTime = 0;
+    quantumSlice = 0;
+  }
 }
 
-void resumeQuantum(int step){
-  if(runningQueue->first != NULL){
-    runningQueue->first->job->remainingTime -= step;
+void resumeQuantum(int slice){
+  if(runningQueue->first == NULL){
+    currentTime += slice;
   }
-  currentTime += step;
-  quantumSlice -= step;
-  return;
+  else{
+    if(slice < runningQueue->first->job->remainingTime){
+      runningQueue->first->job->remainingTime -= slice;
+      currentTime += slice;
+    }
+    else{
+      currentTime += runningQueue->first->job->remainingTime;
+      runningQueue->first->job->remainingTime = 0;
+      quantumSlice = 0;
+      roundRobin();
+    }
+  }
 }
 
 void timeStep(int time){
+  while(currentTime < time){
+    if(runningQueue->first == NULL){
+      quantumSlice = 0;
+    }
 
-  int step = time-currentTime;
+    if(quantumSlice != 0){
+      if(quantumSlice <= time-currentTime){
+        resumeQuantum(quantumSlice);
+        quantumSlice = 0;
+      }
+      else{
+        quantumSlice -= time-currentTime;
+        resumeQuantum(time-currentTime);
+        return;
+      }
+    }
+    int numQuantums = (int) ((time-currentTime)/quantum);
+    quantumSlice = quantum - ((time-currentTime) % quantum);
 
-  if((step < quantumSlice) && (runningQueue->first != NULL) && (runningQueue->first->job->remainingTime > step)){
-    resumeQuantum(step);
-    return;
-  }
-  completeQuantum();
-
-  step = time-currentTime;
-
-  roundRobin();
-
-  while(step > quantum || (runningQueue->first != NULL && runningQueue->first->job->remainingTime < step){
+    for(int i = 0; i < numQuantums; i++){
       processQuantum();
-      step = time - currentTime;
-      roundRobin();
+    }
+
+    roundRobin();
+
+    if(runningQueue->first == NULL){
+      currentTime = time;
+    }
+    else{
+      if(time - currentTime < runningQueue->first->job->remainingTime){
+        runningQueue->first->job->remainingTime -= (time - currentTime);
+        currentTime = time;
+      }
+      else{
+        currentTime += runningQueue->first->job->remainingTime;
+        runningQueue->first->job->remainingTime = 0;
+        quantumSlice = 0;
+      }
+    }
   }
-
-  beginQuantum(step);
-
   return;
 }
 
