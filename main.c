@@ -599,6 +599,7 @@ void readByLineNum(int lineNum, char c){
     fscanf(file, "D %d", &time);
     if(time == 9999){
       printf("End of input file. Dumping final state.\n");
+      timeStep(time);
     }
     else{
       timeStep(time);
