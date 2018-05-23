@@ -67,46 +67,28 @@ node *removeHead(queue *q){
 //not 100% sure of this but lets pretend its fine
 node *removeFromQueue(queue *q, job *j){
   if(q->first == NULL)
-    return NULL;;
+    return NULL;
   node *temp = q->first;
   if(temp->job->jobNumber == j->jobNumber){
     return (removeHead(q));
   }
-  for(temp = q->first; temp != NULL; temp = temp->next){
-      if(temp->next->job->jobNumber == j->jobNumber){
-        node *next = temp->next->next;
-        node *save = temp->next;
-        temp->next = next;
-        q->size--;
-        return(save);
+  else{
+    temp=temp->next;
+    while(temp != NULL){
+      if(temp->job->jobNumber == j->jobNumber){
+        swap(temp, q->first);
+        removeHead(q);
       }
+      temp = temp->next;
+    }
   }
 }
 
 /* function to swap data of two nodes a and b*/
-void swap(node *a, node *b)
-{
-    int temp = a->job->runTime;
-    a->job->runTime = b->job->runTime;
-    b->job->runTime = temp;
-    int temp2 = a->job->arrivalTime;
-    a->job->arrivalTime = b->job->arrivalTime;
-    b->job->arrivalTime = temp2;
-    int temp3 = a->job->jobNumber;
-    a->job->jobNumber = b->job->jobNumber;
-    b->job->jobNumber = temp3;
-    int temp4 = a->job->memUnits;
-    a->job->memUnits = b->job->memUnits;
-    b->job->memUnits = temp4;
-    int temp5 = a->job->devicesMax;
-    a->job->devicesMax = b->job->devicesMax;
-    b->job->devicesMax = temp5;
-    int temp6 = a->job->remainingTime;
-    a->job->remainingTime = b->job->remainingTime;
-    b->job->remainingTime = temp6;
-    int temp7 = a->job->priority;
-    a->job->priority = b->job->priority;
-    b->job->priority = temp7;
+void swap(node *a, node *b){
+    job *j = a->job;
+    a->job = b->job;
+    b->job = j;
 }
 
 //sort the queue by runtime

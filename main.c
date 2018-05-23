@@ -12,7 +12,7 @@
 #define REQUEST_ARGS 3
 #define RELEASE_ARGS 3
 #define DISPLAY_ARGS 1
-#define FILE_NAME "test_input2.txt" //must change based on input test
+#define FILE_NAME "test_input1.txt" //must change based on input test
 
 //global system vars
 int currentTime;
@@ -141,6 +141,7 @@ bool bankersCheck(){
 
 void submitJob(job *j){
   if (j->memUnits > memTotal || j->devicesMax > devicesTotal){
+    removeFromQueue(acceptedJobs, j);
     printf("Job has been rejected due to insufficient memory or devices.");
   }
   else if(j->memUnits > memAvailable){
