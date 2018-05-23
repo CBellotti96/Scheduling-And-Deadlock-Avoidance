@@ -12,7 +12,7 @@
 #define REQUEST_ARGS 3
 #define RELEASE_ARGS 3
 #define DISPLAY_ARGS 1
-#define FILE_NAME "sample_input.txt" //must change based on input test
+#define FILE_NAME "test_input1.txt" //must change based on input test
 
 //global system vars
 int currentTime;
@@ -455,18 +455,18 @@ void completeJob(int time, int jobNum){
 void output(){
   printf("\n");
   printf("******System Information****** \n");
-  printf("Current Time: %d \n", currentTime);
-  printf("Total Memory: %d \n", memTotal);
-  printf("Available Memory: %d \n", memAvailable);
-  printf("Total Devices: %d \n", devicesTotal);
-  printf("Available Devices: %d \n", devicesAvailable);
-  printf("Quantum: %d \n", quantum);
-  printf("Turnaround Time: %d \n", turnaroundTime);
-  printf("Weighted Turnaround Time: %d \n", weightedTurnaroundTime);
-  //implement turnaroundtime and weightedTurnaroundTime!!!
+  printf("\tCurrent Time: %d \n", currentTime);
+  printf("\tTotal Memory: %d \n", memTotal);
+  printf("\tAvailable Memory: %d \n", memAvailable);
+  printf("\tTotal Devices: %d \n", devicesTotal);
+  printf("\tAvailable Devices: %d \n", devicesAvailable);
+  printf("\tQuantum: %d \n", quantum);
+  printf("\tTurnaround Time: %d \n", turnaroundTime);
+  printf("\tWeighted Turnaround Time: %d \n", weightedTurnaroundTime);
+  //implement turnaroundtime and weightedTurnaroundTime correctly
 
   printf("******ReadyQueue****** \n");
-  printf("[");
+  printf("\t[");
   node *temp = newNode();
   for(temp = readyQueue->first; temp != NULL; temp = temp->next){
     printf("%d, ", temp->job->jobNumber);
@@ -474,63 +474,62 @@ void output(){
   printf("] \n");
 
   printf("******RunningQueue****** \n");
-  printf("[");
   if(runningQueue->first != NULL){
-    printf("%d, ", runningQueue->first->job->jobNumber);
+    printf("\t%d ", runningQueue->first->job->jobNumber);
   }
-  printf("]\n");
+  printf("\n");
 
   printf("******SubmitQueue****** \n");
-  printf("[");
+  printf("\t[");
   for(temp = submitQueue->first; temp != NULL; temp = temp->next){
     printf("%d, ", temp->job->jobNumber);
   }
   printf("] \n");
 
   printf("******HoldQueue2****** \n");
-  printf("[");
+  printf("\t[");
   for(temp = holdQueue2->first; temp != NULL; temp = temp->next){
     printf("%d, ", temp->job->jobNumber);
   }
   printf("] \n");
 
   printf("******HoldQueue1****** \n");
-  printf("[");
+  printf("\t[");
   for(temp = holdQueue1->first; temp != NULL; temp = temp->next){
     printf("%d, ", temp->job->jobNumber);
   }
   printf("] \n");
 
   printf("******CompleteQueue****** \n");
-  printf("[");
+  printf("\t[");
   for(temp = completeQueue->first; temp != NULL; temp = temp->next){
     printf("%d, ", temp->job->jobNumber);
   }
   printf("] \n");
 
   printf("******WaitQueue****** \n");
-  printf("[");
+  printf("\t[");
   for(temp = waitQueue->first; temp != NULL; temp = temp->next){
     printf("%d, ", temp->job->jobNumber);
   }
   printf("] \n");
 
   printf("******Jobs****** \n");
-  printf("[ \n");
+  printf("\t[ \n");
   for(temp = acceptedJobs->first; temp != NULL; temp = temp->next){
-    printf("{ \n");
-    printf("Arrival Time: %d, \n", temp->job->arrivalTime);
+    printf("\t\t{ \n");
+    printf("\t\t\tArrival Time: %d, \n", temp->job->arrivalTime);
     if(temp->job->devicesRequested != 0 || temp->job->devicesAllocated != 0){
-      printf("Devices Allocated: %d, \n", temp->job->devicesAllocated);
+      printf("\t\t\tDevices Allocated: %d, \n", temp->job->devicesAllocated);
     }
-    printf("Job Number: %d, \n", temp->job->jobNumber);
-    printf("Remaining Time: %d, \n", temp->job->remainingTime);
+    printf("\t\t\tJob Number: %d, \n", temp->job->jobNumber);
+    printf("\t\t\tRemaining Time: %d, \n", temp->job->remainingTime);
     if(temp->job->completionTime != 0){
-      printf("Completion Time: %d, \n", temp->job->completionTime);
+      printf("\t\t\tCompletion Time: %d, \n", temp->job->completionTime);
     }
-    printf("}, \n");
+    printf("\t\t}, \n");
   }
-  printf("] \n");
+  printf("\t] \n");
   printf("} \n");
 
   //generateJSON();
