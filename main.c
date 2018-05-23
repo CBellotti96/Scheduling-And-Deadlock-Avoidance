@@ -12,7 +12,7 @@
 #define REQUEST_ARGS 3
 #define RELEASE_ARGS 3
 #define DISPLAY_ARGS 1
-#define FILE_NAME "test_input1.txt" //must change based on input test
+#define FILE_NAME "sample_input.txt" //must change based on input test
 
 //global system vars
 int currentTime;
@@ -478,9 +478,6 @@ void output(){
   if(runningQueue->first != NULL){
     printf("%d, ", runningQueue->first->job->jobNumber);
   }
-  else{
-    printf("empty \n");
-  }
   printf("]\n");
 
   printf("******SubmitQueue****** \n");
@@ -593,6 +590,7 @@ void readByLineNum(int lineNum, char c){
     int time;
     fscanf(file, "D %d", &time);
     if(time == 9999){
+      timeStep(time);
       printf("End of input file. Dumping final state.\n");
     }
     else{
