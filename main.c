@@ -158,6 +158,7 @@ void submitJob(job *j){
     //timeStep();
     addToQueue(readyQueue, j);
     memAvailable = memAvailable - j->memUnits;
+    j->memAllocated = j->memUnits;
   }
   printJob(j);
   printGlobals();
