@@ -475,7 +475,7 @@ void output(){
   printf("******RunningQueue****** \n");
   printf("[");
   if(runningQueue->first != NULL){
-    printf("%d \n", runningQueue->first->job->jobNumber);
+    printf("%d, ", runningQueue->first->job->jobNumber);
   }
   else{
     printf("empty \n");
