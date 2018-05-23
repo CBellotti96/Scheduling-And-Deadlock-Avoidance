@@ -42,7 +42,6 @@ void processQuantum();
 void roundRobin();
 void request(int time, int jobNum, int deviceNum);
 void release(int time, int jobNum, int requestNum);
-
 void printArray(int *array, int size){
   for(int i = 0; i < size; i++){
     printf("%d ", array[i]);
@@ -59,6 +58,7 @@ int getNum(char *line){
     }
   }
 }
+
 int getTime(char *line){
   char * charTime;
   char * temp = (char*)malloc(SIZE);
@@ -142,7 +142,7 @@ bool bankersCheck(){
 void submitJob(job *j){
   if (j->memUnits > memTotal || j->devicesMax > devicesTotal){
     removeFromQueue(acceptedJobs, j);
-    printf("Job has been rejected due to insufficient memory or devices.");
+    printf("\nJob %d has been rejected due to insufficient memory or devices.\n", j->jobNumber);
   }
   else if(j->memUnits > memAvailable){
     if(j->priority == 1){
@@ -160,8 +160,6 @@ void submitJob(job *j){
     memAvailable = memAvailable - j->memUnits;
     j->memAllocated = j->memUnits;
   }
-  printJob(j);
-  printGlobals();
 }
 
 void completeJob(int time, int jobNum){
@@ -462,8 +460,8 @@ void output(){
   printf("\tTotal Devices: %d \n", devicesTotal);
   printf("\tAvailable Devices: %d \n", devicesAvailable);
   printf("\tQuantum: %d \n", quantum);
-  printf("\tTurnaround Time: %d \n", turnaroundTime);
-  printf("\tWeighted Turnaround Time: %d \n", weightedTurnaroundTime);
+  //printf("\tTurnaround Time: %d \n", turnaroundTime);
+  //printf("\tWeighted Turnaround Time: %d \n", weightedTurnaroundTime);
   //implement turnaroundtime and weightedTurnaroundTime correctly
 
   printf("******ReadyQueue****** \n");
@@ -546,8 +544,6 @@ void readByLineNum(int lineNum, char c){
     fscanf(file, "C %d M=%d S=%d Q=%d", &currentTime, &memTotal, &devicesTotal, &quantum);
     memAvailable = memTotal;
     devicesAvailable = devicesTotal;
-    printf("C\n");
-    printGlobals();
   }
   else if(c=='A'){
     int tempArrival, tempJob, tempMem, tempDevices, tempRemaining, tempPriority;
@@ -561,9 +557,6 @@ void readByLineNum(int lineNum, char c){
       j->remainingTime = j->runTime = tempRemaining;
       j->priority = tempPriority;
       addToQueue(acceptedJobs, j);
-      printf("A\n");
-      //printJob(j);
-      //printf("\n");
       timeStep(j->arrivalTime);
       submitJob(j);
     }
@@ -572,21 +565,18 @@ void readByLineNum(int lineNum, char c){
     }
   }
   else if(c=='Q'){
-    printf("Q\n");
     int time, jobNum, devices;
     fscanf(file, "Q %d J=%d D=%d", &time, &jobNum, &devices);
     timeStep(time);
     request(time, jobNum, devices);
   }
   else if(c=='L'){
-    printf("L\n");
     int time, jobNum, devices;
     fscanf(file, "L %d, J=%d, D=%d", &time, &jobNum, &devices);
     timeStep(time);
     release(time, jobNum, devices);
   }
   else if(c=='D'){
-    printf("D\n");
     int time;
     fscanf(file, "D %d", &time);
     if(time == 9999){
@@ -596,8 +586,8 @@ void readByLineNum(int lineNum, char c){
     else{
       timeStep(time);
     }
-    turnaroundTime = averageTurnaroundTime();
-    weightedTurnaroundTime = averageWeightedTTime();
+    //turnaroundTime = averageTurnaroundTime();
+    //weightedTurnaroundTime = averageWeightedTTime();
     output();
   }
 }
