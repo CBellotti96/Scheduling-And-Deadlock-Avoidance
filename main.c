@@ -12,7 +12,7 @@
 #define REQUEST_ARGS 3
 #define RELEASE_ARGS 3
 #define DISPLAY_ARGS 1
-#define FILE_NAME "test_input.txt" //must change based on input test
+#define FILE_NAME "test_input2.txt" //must change based on input test
 
 //global system vars
 int currentTime;
@@ -23,6 +23,8 @@ int devicesTotal;
 int devicesAvailable;
 int quantum;
 int quantumSlice;
+int turnaroundTime;
+int weightedTurnaroundTime;
 
 //initializing queues
 queue *submitQueue;
@@ -470,6 +472,8 @@ void output(){
   printf("Total Devices: %d \n", devicesTotal);
   printf("Available Devices: %d \n", devicesAvailable);
   printf("Quantum: %d \n", quantum);
+  printf("Turnaround Time: %d \n", turnaroundTime);
+  printf("Weighted Turnaround Time: %d \n", weightedTurnaroundTime);
   //implement turnaroundtime and weightedTurnaroundTime!!!
 
   printf("******ReadyQueue****** \n");
@@ -481,12 +485,14 @@ void output(){
   printf("] \n");
 
   printf("******RunningQueue****** \n");
+  printf("[");
   if(runningQueue->first != NULL){
     printf("%d \n", runningQueue->first->job->jobNumber);
   }
   else{
     printf("empty \n");
   }
+  printf("]\n");
 
   printf("******SubmitQueue****** \n");
   printf("[");
@@ -604,6 +610,8 @@ void readByLineNum(int lineNum, char c){
     else{
       timeStep(time);
     }
+    turnaroundTime = averageTurnaroundTime();
+    weightedTurnaroundTime = averageWeightedTTime();
     output();
   }
 }
