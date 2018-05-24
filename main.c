@@ -4,19 +4,12 @@
 #include <ctype.h>
 #include "queues.c"
 #include <stdbool.h>
-//#include <json/json.h>
 
 #define SIZE 1024 //used for file reading buffer
-#define CONFIG_ARGS 4
-#define ARRIVAL_ARGS 6
-#define REQUEST_ARGS 3
-#define RELEASE_ARGS 3
-#define DISPLAY_ARGS 1
-#define FILE_NAME "test_input2.txt" //must change based on input test
+#define FILE_NAME "test_input1.txt" //must change based on input test
 
 //global system vars
 int currentTime;
-int nextTime;
 int memTotal;
 int memAvailable;
 int devicesTotal;
@@ -34,7 +27,7 @@ queue *readyQueue;
 queue *waitQueue;
 queue *runningQueue;
 queue *completeQueue;
-queue *acceptedJobs;
+queue *acceptedJobs; //extra queue to keep track of what jobs have been accepted
 
 
 void timeStep(int time);
@@ -42,49 +35,7 @@ void processQuantum();
 void roundRobin();
 void request(int time, int jobNum, int deviceNum);
 void release(int time, int jobNum, int requestNum);
-void printArray(int *array, int size){
-  for(int i = 0; i < size; i++){
-    printf("%d ", array[i]);
-  }
-  printf("\n");
-}
 
-
-int getNum(char *line){
-  int i;
-  for(i = 0; i < strlen(line); i++){
-    if isdigit(line[i]){
-      return (atoi(&line[i]));
-    }
-  }
-}
-
-int getTime(char *line){
-  char * charTime;
-  char * temp = (char*)malloc(SIZE);
-  strcpy(temp, line);
-  charTime = strtok(temp, "C A Q L D ");
-  int numTime = getNum(charTime);
-  return(numTime);
-}
-void getValues (char *line, int *values){
-  line = strtok(line, "C A Q L D "); //remove identifier
-  int i = 0;
-  while(line != NULL) {
-    values[i] = getNum(line);
-    i++;
-    line = strtok(NULL, " ");
-  }
-}
-
-void printGlobals(){
-  printf("Current time: %d\n", currentTime);
-  printf("memory total: %d\n", memTotal);
-  printf("memory available: %d\n", memAvailable);
-  printf("devices total: %d\n", devicesTotal);
-  printf("devices available: %d\n", devicesAvailable);
-  printf("Quantum: %d\n", quantum);
-}
 
 
 //using bankers algorithm to check if system is in a safe state
@@ -182,6 +133,8 @@ void completeJob(int time, int jobNum){
     runningQueue->first->job->memAllocated = 0;
     runningQueue->first->job->completionTime = currentTime;
     addToQueue(completeQueue, runningQueue->first->job);
+    runningQueue->first->job->turnaroundTime = runningQueue->first->job->completionTime - runningQueue->first->job->arrivalTime;
+    runningQueue->first->job->weightedTurnaroundTime = runningQueue->first->job->turnaroundTime / runningQueue->first->job->runTime;
     removeHead(runningQueue);
 
     //check waitQueue first
@@ -513,9 +466,10 @@ void output(){
   printf("\tTotal Devices: %d \n", devicesTotal);
   printf("\tAvailable Devices: %d \n", devicesAvailable);
   printf("\tQuantum: %d \n", quantum);
-  //printf("\tTurnaround Time: %d \n", turnaroundTime);
-  //printf("\tWeighted Turnaround Time: %d \n", weightedTurnaroundTime);
-  //implement turnaroundtime and weightedTurnaroundTime correctly
+  if(completeQueue->first != NULL){ //only print turnaround times if there are completed jobs
+    printf("\tTurnaround Time: %d \n", turnaroundTime);
+    printf("\tWeighted Turnaround Time: %d \n", weightedTurnaroundTime);
+  }
 
   //printing queues
 
@@ -653,8 +607,8 @@ void readByLineNum(int lineNum, char c){
     else{
       timeStep(time);
     }
-    //turnaroundTime = averageTurnaroundTime();
-    //weightedTurnaroundTime = averageWeightedTTime();
+    turnaroundTime = averageTurnaroundTime();
+    weightedTurnaroundTime = averageWeightedTTime();
     output();
   }
 }
@@ -672,10 +626,8 @@ int main(int argc, char ** argv){
   acceptedJobs = createQueue();
 
   FILE * file = fopen(FILE_NAME, "r");
-  FILE * file2 = fopen(FILE_NAME, "r");
   size_t fileBuffer = SIZE;
   char *currLine = (char *)malloc(SIZE * sizeof(char));
-  char *nextLine = (char *)malloc(SIZE * sizeof(char));
   if(!file){
     printf("Error: input file could not be read. Exiting... \n");
     return(0);
@@ -690,7 +642,6 @@ int main(int argc, char ** argv){
         if ((c=currLine[jj]) != -1) break;
       }
       readByLineNum(lineNum, c);
-      //printf("%c %d \n",c, lineNum);
     }
   }
   return(0);
