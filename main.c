@@ -7,16 +7,7 @@
 //#include <json/json.h>
 
 #define SIZE 1024 //used for file reading buffer
-<<<<<<< HEAD
 #define FILE_NAME "test_input1.txt" //must change based on input test
-=======
-#define CONFIG_ARGS 4
-#define ARRIVAL_ARGS 6
-#define REQUEST_ARGS 3
-#define RELEASE_ARGS 3
-#define DISPLAY_ARGS 1
-#define FILE_NAME "test_input2.txt" //must change based on input test
->>>>>>> 7a182355e66fd6e524be573576c9693616ebce10
 
 //global system vars
 int currentTime;
