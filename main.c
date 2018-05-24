@@ -6,7 +6,7 @@
 #include <stdbool.h>
 
 #define SIZE 1024 //used for file reading buffer
-#define FILE_NAME "test_input1.txt" //must change based on input test
+#define FILE_NAME "test_input2.txt" //must change based on input test
 
 //global system vars
 int currentTime;
@@ -36,8 +36,6 @@ void roundRobin();
 void request(int time, int jobNum, int deviceNum);
 void release(int time, int jobNum, int requestNum);
 
-
-
 //using bankers algorithm to check if system is in a safe state
 bool bankersCheck(){
   //define number of processes that may need devices
@@ -48,37 +46,41 @@ bool bankersCheck(){
   //allocating temp vars
   int *need = (int *) malloc(processes  * sizeof(int));
   int *allocated = (int *) malloc(processes * sizeof(int));
-  bool *finished = (bool *) malloc(processes * sizeof(bool));
+  int *nums = (int *)malloc(processes * sizeof(int));
+  bool *finished = (bool *) malloc(processes * sizeof(bool));  
   int tempAvailable = devicesAvailable;
   int i = 0;
+  node *temp = newNode();
+  if (readyQueue->first != NULL){
+    for(temp = readyQueue->first; temp != NULL; temp = temp->next){
+      need[i] = temp->job->devicesMax - temp->job->devicesAllocated;
+      allocated[i] = temp->job->devicesAllocated;
+      i++;
+    }
+  }
+  if(waitQueue->first != NULL){
+    for(temp = waitQueue->first; temp != NULL; temp = temp->next){
+      need[i] = temp->job->devicesMax - temp->job->devicesAllocated;
+      allocated[i] = temp->job->devicesAllocated;
+      i++;
+    }
+  }
   if(runningQueue->first != NULL){
     need[i] = runningQueue->first->job->devicesMax - runningQueue->first->job->devicesAllocated;
     allocated[i] = runningQueue->first->job->devicesAllocated;
-    i++;
-  }
-  node *temp = newNode();
-  for(temp = readyQueue->first; temp != NULL; temp = temp->next){
-    need[i] = temp->job->devicesMax - temp->job->devicesAllocated;
-    allocated[i] = temp->job->devicesAllocated;
-    i++;
-  }
-  for(temp = waitQueue->first; temp != NULL; temp = temp->next){
-    need[i] = temp->job->devicesMax - temp->job->devicesAllocated;
-    allocated[i] = temp->job->devicesAllocated;
-    i++;
   }
   int count = 0;
   while (count < processes){
     bool canComplete = false;
     for (int p = 0; p < processes; p++){
-      if(finished[p] == 0){
+      if(finished[p] != 1){
         if(need[p] > tempAvailable){
           continue;
         }
         tempAvailable += allocated[p];
+        count++;
         finished[p] = 1;
         canComplete = true;
-        count++;
       }
     }
     if (canComplete == false){
@@ -135,7 +137,7 @@ void completeJob(int time, int jobNum){
     addToQueue(completeQueue, runningQueue->first->job);
     runningQueue->first->job->turnaroundTime = runningQueue->first->job->completionTime - runningQueue->first->job->arrivalTime;
     runningQueue->first->job->weightedTurnaroundTime = runningQueue->first->job->turnaroundTime / runningQueue->first->job->runTime;
-    removeHead(runningQueue);
+    removeFromQueue(runningQueue,runningQueue->first->job);
 
     //check waitQueue first
     node *temp = newNode();
@@ -292,19 +294,21 @@ void release(int time, int jobNum, int deviceNum){
     runningQueue->first->job->devicesAllocated -= deviceNum;
     //go to back of ready queue
     addToQueue(readyQueue, runningQueue->first->job);
-    removeHead(runningQueue);
+    removeFromQueue(runningQueue,runningQueue->first->job);
     quantumSlice = 0;
 
     //check wait queue since we have more devices available now
     //pretend to allocate to each & call bankers until we find one in a safe state
     node *temp = newNode();
     for(temp = waitQueue->first; temp != NULL; temp = temp->next){
+      printf("for loop");
       if(temp->job->devicesRequested <= devicesAvailable){
         temp->job->devicesAllocated += temp->job->devicesRequested;
         devicesAvailable -= temp->job->devicesRequested;
 
         //if unsafe, deallocate and continue
         if(!bankersCheck()){
+          printf("!bankers");
           temp->job->devicesAllocated -= temp->job->devicesRequested;
           devicesAvailable += temp->job->devicesRequested;
           continue;
@@ -312,6 +316,7 @@ void release(int time, int jobNum, int deviceNum){
         //if safe, keep allocation and move to ready queue
         else{
           temp->job->devicesRequested = 0;
+          printf("print");
           addToQueue(readyQueue, temp->job);
           removeFromQueue(waitQueue, temp->job);
         }
@@ -361,7 +366,7 @@ void request(int time, int jobNum, int deviceNum){
       printf("Cannot complete request at this time, not enough devices available \n");
       runningQueue->first->job->devicesRequested += deviceNum;
       addToQueue(waitQueue, runningQueue->first->job);
-      removeHead(runningQueue);
+      removeFromQueue(runningQueue, runningQueue->first->job);
       quantumSlice = 0;
     }
     //in case request is larger than max allowed for a process
@@ -375,7 +380,7 @@ void request(int time, int jobNum, int deviceNum){
       //if safe state, keep allocated devices and go to ready queue
       if(bankersCheck()){
         addToQueue(readyQueue, runningQueue->first->job);
-        removeHead(runningQueue);
+        removeFromQueue(readyQueue,runningQueue->first->job);
         quantumSlice = 0;
         return;
       }
@@ -383,9 +388,9 @@ void request(int time, int jobNum, int deviceNum){
       else{
         devicesAvailable += deviceNum;
         runningQueue->first->job->devicesAllocated -= deviceNum;
-        runningQueue->first->job->devicesRequested += deviceNum;
+        runningQueue->first->job->devicesRequested = deviceNum;
         addToQueue(waitQueue, runningQueue->first->job);
-        removeHead(runningQueue);
+        removeFromQueue(runningQueue,runningQueue->first->job);
         quantumSlice = 0;
       }
     }
@@ -476,8 +481,10 @@ void output(){
   printf("******ReadyQueue****** \n");
   printf("\t[");
   node *temp = newNode();
-  for(temp = readyQueue->first; temp != NULL; temp = temp->next){
-    printf("%d, ", temp->job->jobNumber);
+  if(readyQueue->first != NULL){
+    for(temp = readyQueue->first; temp != NULL; temp = temp->next){
+      printf("%d, ", temp->job->jobNumber);
+    }
   }
   printf("] \n");
 
@@ -517,8 +524,10 @@ void output(){
 
   printf("******WaitQueue****** \n");
   printf("\t[");
-  for(temp = waitQueue->first; temp != NULL; temp = temp->next){
-    printf("%d, ", temp->job->jobNumber);
+  if(waitQueue->first != NULL){
+    for(temp = waitQueue->first; temp != NULL; temp = temp->next){
+      printf("%d, ", temp->job->jobNumber);
+    }
   }
   printf("] \n");
 

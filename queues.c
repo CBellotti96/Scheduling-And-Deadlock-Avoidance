@@ -59,9 +59,11 @@ node *removeFromQueue(queue *q, job *j){
     while(temp != NULL){
       if(temp->job->jobNumber == j->jobNumber){
         swap(temp, q->first);
+        q->first = temp;
         removeHead(q);
+        break;
       }
-      temp = temp->next;
+    temp = temp->next;
     }
   }
 }
@@ -71,6 +73,9 @@ void swap(node *a, node *b){
     job *j = a->job;
     a->job = b->job;
     b->job = j;
+    node *temp = a->next;
+    a->next = b->next;
+    b->next = temp;
 }
 
 //sort the queue by runtime for SJF
