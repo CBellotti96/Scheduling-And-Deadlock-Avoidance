@@ -404,7 +404,7 @@ void request(int time, int jobNum, int deviceNum){
   }
 }
 
-char * printQueue(Queue *q, char *buffer){
+char * printQueue(queue *q, char *buffer){
   int offset = 0;
   node *temp = q->first;
   offset += snprintf(buffer+offset, SIZE-offset, "[");
@@ -416,7 +416,7 @@ char * printQueue(Queue *q, char *buffer){
   return buffer;
 }
 
-char * printJobs(Queue *q, char *buffer){
+char * printJobs(queue *q, char *buffer){
   int offset = 0;
   node *temp = q->first;
   offset += snprintf(buffer+offset, SIZE-offset, "[");
