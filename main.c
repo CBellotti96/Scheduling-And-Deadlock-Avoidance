@@ -87,7 +87,10 @@ void printGlobals(){
 }
 
 bool bankersCheck(){
-  int processes = readyQueue->size + waitQueue->size + runningQueue->size;
+  int processes = readyQueue->size + waitQueue->size;
+  if(runningQueue->first != NULL){
+    processes++;
+  }
   int *need = (int *) malloc(processes  * sizeof(int));
   int *allocated = (int *) malloc(processes * sizeof(int));
   bool *finished = (bool *) malloc(processes * sizeof(bool));
@@ -120,6 +123,7 @@ bool bankersCheck(){
         tempAvailable += allocated[p];
         finished[p] = 1;
         canComplete = true;
+        count++;
       }
     }
     if (canComplete == false){
