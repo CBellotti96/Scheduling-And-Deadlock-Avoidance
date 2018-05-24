@@ -12,7 +12,7 @@
 #define REQUEST_ARGS 3
 #define RELEASE_ARGS 3
 #define DISPLAY_ARGS 1
-#define FILE_NAME "test_input1.txt" //must change based on input test
+#define FILE_NAME "test_input2.txt" //must change based on input test
 
 //global system vars
 int currentTime;
@@ -539,7 +539,7 @@ void output(){
   printf("\t] \n");
   printf("} \n");
 
-  //generateJSON();
+  generateJSON();
 }
 
 void readByLineNum(int lineNum, char c){
