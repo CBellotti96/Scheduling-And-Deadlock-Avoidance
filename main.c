@@ -374,6 +374,9 @@ void request(int time, int jobNum, int deviceNum){
       removeHead(runningQueue);
       quantumSlice = 0;
     }
+    else if(runningQueue->first->job->devicesMax < runningQueue->first->job->devicesAllocated + deviceNum){
+      printf("Process requesting too many devices. \n");
+    }
     else{
       devicesAvailable -= deviceNum;
       runningQueue->first->job->devicesAllocated += deviceNum;
@@ -401,59 +404,60 @@ void request(int time, int jobNum, int deviceNum){
   }
 }
 
-/*void generateJSON(){
-void completeJob(int time, int jobNum){
-  if(runningQueue->first->job->jobNumber == jobNum){
-    //make devices and memory available
-    devicesAvailable += runningQueue->first->job->devicesAllocated;
-    runningQueue->first->job->devicesAllocated = 0;
-    memAvailable += runningQueue->first->job->memAllocated;
-    runningQueue->first->job->memAllocated = 0;
-    runningQueue->first->job->completionTime = currentTime;
-    addToQueue(completeQueue, runningQueue->first->job);
-    removeHead(runningQueue);
-
-    //check waitQueue first
-    node *temp = newNode();
-    for(temp = waitQueue->first; temp != NULL; temp = temp->next){
-      if(temp->job->devicesRequested <= devicesAvailable){
-        //allocate and call bankersCheck()
-        devicesAvailable -= temp->job->devicesRequested;
-        temp->job->devicesAllocated += temp->job->devicesRequested;
-        if(!bankersCheck()){
-          devicesAvailable += temp->job->devicesRequested;
-          temp->job->devicesAllocated -= temp->job->devicesRequested;
-          continue;
-        }
-        else{
-          temp->job->devicesRequested = 0;
-          addToQueue(readyQueue, temp->job);
-          removeFromQueue(waitQueue, temp->job);
-        }
-      }
-    }
-    if(holdQueue1->first != NULL){
-      for(temp = holdQueue1->first; temp != NULL; temp = temp->next){
-        if(memAvailable >= temp->job->memUnits){
-          addToQueue(readyQueue, temp->job);
-          memAvailable -= temp->job->memUnits;
-          temp->job->memAllocated = temp->job->memUnits;
-          removeFromQueue(holdQueue1, temp->job);
-        }
-      }
-    }
-    if(holdQueue2->first != NULL){
-      for(temp = holdQueue2->first; temp != NULL; temp = temp->next){
-        if(memAvailable >= temp->job->memUnits){
-          addToQueue(readyQueue, temp->job);
-          memAvailable -= temp->job->memUnits;
-          temp->job->memAllocated = temp->job->memUnits;
-          removeFromQueue(holdQueue2, temp->job);
-        }
-      }
-    }
+char * printQueue(Queue *q, char *buffer){
+  int offset = 0;
+  node *temp = q->first;
+  offset += snprintf(buffer+offset, SIZE-offset, "[");
+  while(temp != NULL){
+    offset += snprintf(buffer+offset, SIZE-offset, "%d,", temp->job->jobNumber);
+    temp = temp->next;
   }
-}*/
+  offset += snprintf(buffer+offset, SIZE-offset, "]");
+  return buffer;
+}
+
+char * printJobs(Queue *q, char *buffer){
+  int offset = 0;
+  node *temp = q->first;
+  offset += snprintf(buffer+offset, SIZE-offset, "[");
+  while(temp != NULL){
+    offset += snprintf(buffer+offset, SIZE-offset, "{\"arrival time\": %d,\"devices allocated\": %d,\"id\":%d,\"remaining time\": %d",
+    temp->job->arrivalTime, temp->job->devicesAllocated, temp->job->jobNumber, temp->job->remainingTime);
+    if(temp->job->completionTime != 0){
+      offset += snprintf(buffer+offset, SIZE-offset, "\"completion time\": %d", temp->job->completionTime);
+    }
+    offset += snprintf(buffer+offset, SIZE-offset, "}");
+    temp = temp->next;
+  }
+  offset += snprintf(buffer+offset, SIZE-offset, "]");
+  return buffer;
+}
+
+void generateJSON(){
+  printf("generating json output \n");
+  char fileOutName[SIZE];
+  snprintf(fileOutName, SIZE, "D%d.json",currentTime);
+  FILE *fileOut;
+  fileOut = fopen(fileOutName, "w");
+  char line[SIZE];
+  fprintf(fileOut, "{");
+  fprintf(fileOut, "\"Current Time\": %d", currentTime);
+  fprintf(fileOut, "\"Total Memory\": %d", memTotal);
+  fprintf(fileOut, "\"Available Memory\": %d", memAvailable);
+  fprintf(fileOut, "\"Total Devices\": %d", devicesTotal);
+  fprintf(fileOut, "\"Available Devices\": %d", devicesAvailable);
+  fprintf(fileOut, "\"Quantum\": %d", quantum);
+  fprintf(fileOut, "\"Ready Queue\": %s", printQueue(readyQueue, line));
+  fprintf(fileOut, "\"Running\": %d", runningQueue->first->job->jobNumber);
+  fprintf(fileOut, "\"Submit Queue\": %s", printQueue(submitQueue, line));
+  fprintf(fileOut, "\"Hold Queue 2\": %s", printQueue(holdQueue2, line));
+  fprintf(fileOut, "\"Hold Queue 1\": %s", printQueue(holdQueue1, line));
+  fprintf(fileOut, "\"Complete Queue\": %s", printQueue(completeQueue, line));
+  fprintf(fileOut, "\"Wait Queue\": %s", printQueue(waitQueue, line));
+  fprintf(fileOut, "\"Jobs\": %s", printJobs(acceptedJobs, line));
+  fprintf(fileOut, "}");
+  fclose(fileOut);
+}
 
 void output(){
   printf("\n");
