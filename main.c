@@ -4,14 +4,12 @@
 #include <ctype.h>
 #include "queues.c"
 #include <stdbool.h>
-//#include <json/json.h>
 
 #define SIZE 1024 //used for file reading buffer
 #define FILE_NAME "test_input1.txt" //must change based on input test
 
 //global system vars
 int currentTime;
-int nextTime;
 int memTotal;
 int memAvailable;
 int devicesTotal;
@@ -29,7 +27,7 @@ queue *readyQueue;
 queue *waitQueue;
 queue *runningQueue;
 queue *completeQueue;
-queue *acceptedJobs;
+queue *acceptedJobs; //extra queue to keep track of what jobs have been accepted
 
 
 void timeStep(int time);
@@ -37,12 +35,6 @@ void processQuantum();
 void roundRobin();
 void request(int time, int jobNum, int deviceNum);
 void release(int time, int jobNum, int requestNum);
-void printArray(int *array, int size){
-  for(int i = 0; i < size; i++){
-    printf("%d ", array[i]);
-  }
-  printf("\n");
-}
 
 
 bool bankersCheck(){
@@ -575,10 +567,8 @@ int main(int argc, char ** argv){
   acceptedJobs = createQueue();
 
   FILE * file = fopen(FILE_NAME, "r");
-  FILE * file2 = fopen(FILE_NAME, "r");
   size_t fileBuffer = SIZE;
   char *currLine = (char *)malloc(SIZE * sizeof(char));
-  char *nextLine = (char *)malloc(SIZE * sizeof(char));
   if(!file){
     printf("Error: input file could not be read. Exiting... \n");
     return(0);
@@ -593,7 +583,6 @@ int main(int argc, char ** argv){
         if ((c=currLine[jj]) != -1) break;
       }
       readByLineNum(lineNum, c);
-      //printf("%c %d \n",c, lineNum);
     }
   }
   return(0);
