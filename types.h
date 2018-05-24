@@ -5,7 +5,6 @@
 typedef struct job {
   int arrivalTime;
   bool processExists;
-  int processArrival;
   int completionTime;
   int turnaroundTime;
   int weightedTurnaroundTime;
