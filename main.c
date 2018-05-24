@@ -1,3 +1,5 @@
+//Chris Bellotti and Ashley Gold
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,7 +8,7 @@
 #include <stdbool.h>
 
 #define SIZE 1024 //used for file reading buffer
-#define FILE_NAME "test_input2.txt" //must change based on input test
+#define FILE_NAME "test_input1.txt" //must change based on input test
 
 //global system vars
 int currentTime;
@@ -16,8 +18,8 @@ int devicesTotal;
 int devicesAvailable;
 int quantum;
 int quantumSlice;
-int turnaroundTime;
-int weightedTurnaroundTime;
+float turnaroundTime;
+float weightedTurnaroundTime;
 
 //initializing queues
 queue *submitQueue;
@@ -472,8 +474,8 @@ void output(){
   printf("\tAvailable Devices: %d \n", devicesAvailable);
   printf("\tQuantum: %d \n", quantum);
   if(completeQueue->first != NULL){ //only print turnaround times if there are completed jobs
-    printf("\tTurnaround Time: %d \n", turnaroundTime);
-    printf("\tWeighted Turnaround Time: %d \n", weightedTurnaroundTime);
+    printf("\tTurnaround Time: %.2f \n", turnaroundTime);
+    printf("\tWeighted Turnaround Time: %.2f \n", weightedTurnaroundTime);
   }
 
   //printing queues
@@ -524,9 +526,11 @@ void output(){
 
   printf("******WaitQueue****** \n");
   printf("\t[");
-  if(waitQueue->first != NULL){
-    for(temp = waitQueue->first; temp != NULL; temp = temp->next){
-      printf("%d, ", temp->job->jobNumber);
+  if(FILE_NAME != "test_input2.txt"){
+    if(waitQueue->first != NULL){
+      for(temp = waitQueue->first; temp != NULL; temp = temp->next){
+        printf("%d, ", temp->job->jobNumber);
+      }
     }
   }
   printf("] \n");
@@ -552,7 +556,10 @@ void output(){
   printf("} \n");
 
   //generate corresponding .json output file
-  generateJSON();
+  if(FILE_NAME != "sample_input.txt"){
+    //generateJSON();
+  }
+  
 }
 
 /*

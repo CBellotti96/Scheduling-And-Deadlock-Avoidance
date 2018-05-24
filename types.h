@@ -1,3 +1,5 @@
+//Chris Bellotti and Ashley Gold
+
 #include <stdbool.h>
 #ifndef TYPES_H
 #define TYPES_H

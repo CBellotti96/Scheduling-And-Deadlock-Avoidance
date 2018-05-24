@@ -1,3 +1,5 @@
+//Chris Bellotti and Ashley Gold
+
 #include "types.h"
 #include <stdlib.h>
 #include <stdio.h>
