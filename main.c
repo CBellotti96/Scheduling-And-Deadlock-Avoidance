@@ -86,11 +86,15 @@ void printGlobals(){
   printf("Quantum: %d\n", quantum);
 }
 
+
+//using bankers algorithm to check if system is in a safe state
 bool bankersCheck(){
+  //define number of processes that may need devices
   int processes = readyQueue->size + waitQueue->size;
   if(runningQueue->first != NULL){
     processes++;
   }
+  //allocating temp vars
   int *need = (int *) malloc(processes  * sizeof(int));
   int *allocated = (int *) malloc(processes * sizeof(int));
   bool *finished = (bool *) malloc(processes * sizeof(bool));
@@ -148,6 +152,7 @@ void submitJob(job *j){
     removeFromQueue(acceptedJobs, j);
     printf("\nJob %d has been rejected due to insufficient memory or devices.\n", j->jobNumber);
   }
+  //if there isn't enough memory available, go to a hold queue
   else if(j->memUnits > memAvailable){
     if(j->priority == 1){
       addToQueue(holdQueue1, j);
@@ -157,6 +162,7 @@ void submitJob(job *j){
       addToQueue(holdQueue2, j);
     }
   }
+  //if memory available, go to ready queue
   else{
     j->processExists = true;
     //timeStep();
@@ -166,6 +172,7 @@ void submitJob(job *j){
   }
 }
 
+//handle job completion
 void completeJob(int time, int jobNum){
   if(runningQueue->first->job->jobNumber == jobNum){
     //make devices and memory available
@@ -196,6 +203,7 @@ void completeJob(int time, int jobNum){
         }
       }
     }
+    //then hold queues
     if(holdQueue1->first != NULL){
       for(temp = holdQueue1->first; temp != NULL; temp = temp->next){
         if(memAvailable >= temp->job->memUnits){
@@ -219,6 +227,11 @@ void completeJob(int time, int jobNum){
   }
 }
 
+
+/*
+swaps out whatever is running on the cpu with other eligible processes
+either at the end of a quantum or on an interrupt
+*/
 void roundRobin(){
   if(runningQueue->first != NULL){
     if(runningQueue->first->job->remainingTime <= 0){
@@ -236,17 +249,19 @@ void roundRobin(){
     runningQueue->first = NULL;
   }
 }
-
+//completes a quantum by finishing leftover quantum or completing job
 void finishQuantum(){
+  //if nothing is running return
   if(runningQueue->first == NULL){
     quantumSlice = 0;
     return;
   }
-
+  //complete job
   if(runningQueue->first->job->remainingTime < quantumSlice){
     currentTime += runningQueue->first->job->remainingTime;
     runningQueue->first->job->remainingTime = 0;
   }
+  //finish leftover quantum
   else{
     currentTime += quantumSlice;
     runningQueue->first->job->remainingTime -= quantumSlice;
@@ -254,6 +269,7 @@ void finishQuantum(){
   quantumSlice = quantum;
 }
 
+//start the next quantum
 void beginQuantum(int step){
   if(runningQueue->first != NULL){
     runningQueue->first->job->remainingTime -= step;
@@ -263,6 +279,7 @@ void beginQuantum(int step){
   quantumSlice = quantum - (step % quantum);
 }
 
+//advance time by one quantum
 void processQuantum(){
   if(runningQueue->first == NULL){
     currentTime += quantum;
@@ -271,6 +288,7 @@ void processQuantum(){
   finishQuantum();
 }
 
+//continue a quantum, but don't finish it yet
 void resumeQuantum(int step){
   if(runningQueue->first != NULL){
     runningQueue->first->job->remainingTime -= step;
@@ -280,10 +298,16 @@ void resumeQuantum(int step){
   return;
 }
 
+
+/*
+moves us to the time of the next event from our input
+must deal with cases of different states of the current quantum
+*/
 void timeStep(int time){
 
   int step = time - currentTime;
 
+  //if job isn't finishing & quantum isn't finishing before time step
   if(step < quantumSlice && runningQueue->first != NULL && runningQueue->first->job->remainingTime > step){
       resumeQuantum(step);
       return;
@@ -294,36 +318,45 @@ void timeStep(int time){
 
   roundRobin();
 
+  //keep running quantums until we are close to time step
   while(step > quantum || (runningQueue->first != NULL && runningQueue->first->job->remainingTime < step)){
     processQuantum();
     step = time - currentTime;
     roundRobin();
   }
+  //begin the next quantum
   beginQuantum(step);
 
   return;
 }
 
+
+//takes in a release from input, checks if it is valid & updates system
 void release(int time, int jobNum, int deviceNum){
+  //check if correct job is running and it holds >= devices being released
   if(runningQueue->first != NULL && runningQueue->first->job->jobNumber == jobNum && runningQueue->first->job->devicesAllocated >= deviceNum){
     devicesAvailable += deviceNum;
     runningQueue->first->job->devicesAllocated -= deviceNum;
-
+    //go to back of ready queue
     addToQueue(readyQueue, runningQueue->first->job);
     removeHead(runningQueue);
     quantumSlice = 0;
 
+    //check wait queue since we have more devices available now
+    //pretend to allocate to each & call bankers until we find one in a safe state
     node *temp = newNode();
     for(temp = waitQueue->first; temp != NULL; temp = temp->next){
       if(temp->job->devicesRequested <= devicesAvailable){
         temp->job->devicesAllocated += temp->job->devicesRequested;
         devicesAvailable -= temp->job->devicesRequested;
 
+        //if unsafe, deallocate and continue
         if(!bankersCheck()){
           temp->job->devicesAllocated -= temp->job->devicesRequested;
           devicesAvailable += temp->job->devicesRequested;
           continue;
         }
+        //if safe, keep allocation and move to ready queue
         else{
           temp->job->devicesRequested = 0;
           addToQueue(readyQueue, temp->job);
@@ -365,8 +398,12 @@ float averageWeightedTTime(){
   return((float)sum/(float)numElements);
 }
 
+
+//takes in a request for devices from input, checks if it can be fulfilled & updates system
 void request(int time, int jobNum, int deviceNum){
+  //check if correct job is running
   if(runningQueue->first != NULL && runningQueue->first->job->jobNumber == jobNum){
+    //if there aren't enough devices available, save our request for later
     if(devicesAvailable < deviceNum){
       printf("Cannot complete request at this time, not enough devices available \n");
       runningQueue->first->job->devicesRequested += deviceNum;
@@ -374,18 +411,22 @@ void request(int time, int jobNum, int deviceNum){
       removeHead(runningQueue);
       quantumSlice = 0;
     }
+    //in case request is larger than max allowed for a process
     else if(runningQueue->first->job->devicesMax < runningQueue->first->job->devicesAllocated + deviceNum){
       printf("Process requesting too many devices. \n");
     }
+    //if we have enough devices available, pretend to allocate and call bankers
     else{
       devicesAvailable -= deviceNum;
       runningQueue->first->job->devicesAllocated += deviceNum;
+      //if safe state, keep allocated devices and go to ready queue
       if(bankersCheck()){
         addToQueue(readyQueue, runningQueue->first->job);
         removeHead(runningQueue);
         quantumSlice = 0;
         return;
       }
+      //if unsafe state, deallocate and go to wait queue
       else{
         devicesAvailable += deviceNum;
         runningQueue->first->job->devicesAllocated -= deviceNum;
@@ -441,12 +482,14 @@ void generateJSON(){
   fileOut = fopen(fileOutName, "w");
   char line[SIZE];
   fprintf(fileOut, "{");
+  //globals
   fprintf(fileOut, "\"Current Time\": %d", currentTime);
   fprintf(fileOut, "\"Total Memory\": %d", memTotal);
   fprintf(fileOut, "\"Available Memory\": %d", memAvailable);
   fprintf(fileOut, "\"Total Devices\": %d", devicesTotal);
   fprintf(fileOut, "\"Available Devices\": %d", devicesAvailable);
   fprintf(fileOut, "\"Quantum\": %d", quantum);
+  //queues
   fprintf(fileOut, "\"Ready Queue\": %s", printQueue(readyQueue, line));
   fprintf(fileOut, "\"Running\": %d", runningQueue->first->job->jobNumber);
   fprintf(fileOut, "\"Submit Queue\": %s", printQueue(submitQueue, line));
@@ -454,6 +497,7 @@ void generateJSON(){
   fprintf(fileOut, "\"Hold Queue 1\": %s", printQueue(holdQueue1, line));
   fprintf(fileOut, "\"Complete Queue\": %s", printQueue(completeQueue, line));
   fprintf(fileOut, "\"Wait Queue\": %s", printQueue(waitQueue, line));
+  //jobs
   fprintf(fileOut, "\"Jobs\": %s", printJobs(acceptedJobs, line));
   fprintf(fileOut, "}");
   fclose(fileOut);
@@ -461,6 +505,7 @@ void generateJSON(){
 
 void output(){
   printf("\n");
+  //printing globals
   printf("******System Information****** \n");
   printf("\tCurrent Time: %d \n", currentTime);
   printf("\tTotal Memory: %d \n", memTotal);
@@ -471,6 +516,8 @@ void output(){
   //printf("\tTurnaround Time: %d \n", turnaroundTime);
   //printf("\tWeighted Turnaround Time: %d \n", weightedTurnaroundTime);
   //implement turnaroundtime and weightedTurnaroundTime correctly
+
+  //printing queues
 
   printf("******ReadyQueue****** \n");
   printf("\t[");
@@ -521,6 +568,8 @@ void output(){
   }
   printf("] \n");
 
+  //printing jobs
+
   printf("******Jobs****** \n");
   printf("\t[ \n");
   for(temp = acceptedJobs->first; temp != NULL; temp = temp->next){
@@ -539,20 +588,27 @@ void output(){
   printf("\t] \n");
   printf("} \n");
 
+  //generate corresponding .json output file
   generateJSON();
 }
 
+/*
+reads in the file line-by-line, parse the data based on the provided
+key, assign appropriate values and call corresponding helper functions
+*/
 void readByLineNum(int lineNum, char c){
   FILE * file = fopen(FILE_NAME, "r");
   char ignore[SIZE];
   for (int i=0; i<lineNum-1; i++){
     fgets(ignore, sizeof(ignore), file);
   }
+  //system config
   if(c=='C'){
     fscanf(file, "C %d M=%d S=%d Q=%d", &currentTime, &memTotal, &devicesTotal, &quantum);
     memAvailable = memTotal;
     devicesAvailable = devicesTotal;
   }
+  //job arrival
   else if(c=='A'){
     int tempArrival, tempJob, tempMem, tempDevices, tempRemaining, tempPriority;
     fscanf(file, "A %d J=%d M=%d S=%d R=%d P=%d", &tempArrival, &tempJob, &tempMem, &tempDevices, &tempRemaining, &tempPriority);
@@ -572,18 +628,21 @@ void readByLineNum(int lineNum, char c){
       printf("job rejected, not enough total memory or devices.");
     }
   }
+  //device request
   else if(c=='Q'){
     int time, jobNum, devices;
     fscanf(file, "Q %d J=%d D=%d", &time, &jobNum, &devices);
     timeStep(time);
     request(time, jobNum, devices);
   }
+  //device release
   else if(c=='L'){
     int time, jobNum, devices;
     fscanf(file, "L %d, J=%d, D=%d", &time, &jobNum, &devices);
     timeStep(time);
     release(time, jobNum, devices);
   }
+  //dump state
   else if(c=='D'){
     int time;
     fscanf(file, "D %d", &time);
