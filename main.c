@@ -8,7 +8,7 @@
 #include <stdbool.h>
 
 #define SIZE 1024 //used for file reading buffer
-#define FILE_NAME "test_input1.txt" //must change based on input test
+#define FILE_NAME "sample_input.txt" //must change based on input test
 
 //global system vars
 int currentTime;
@@ -108,7 +108,7 @@ void submitJob(job *j){
     printf("\nJob %d has been rejected due to insufficient memory or devices.\n", j->jobNumber);
   }
   //if there isn't enough memory available, go to a hold queue
-  else if(j->memUnits > memAvailable){
+  if(j->memUnits > memAvailable){
     if(j->priority == 1){
       addToQueue(holdQueue1, j);
       sortByRuntime(holdQueue1); //Sorting by runtime so SJF can be used
@@ -118,7 +118,7 @@ void submitJob(job *j){
     }
   }
   //if memory available, go to ready queue
-  else{
+  if(j->memUnits <= memAvailable){
     j->processExists = true;
     //timeStep();
     addToQueue(readyQueue, j);
@@ -139,7 +139,7 @@ void completeJob(int time, int jobNum){
     addToQueue(completeQueue, runningQueue->first->job);
     runningQueue->first->job->turnaroundTime = runningQueue->first->job->completionTime - runningQueue->first->job->arrivalTime;
     runningQueue->first->job->weightedTurnaroundTime = runningQueue->first->job->turnaroundTime / runningQueue->first->job->runTime;
-    removeFromQueue(runningQueue,runningQueue->first->job);
+    removeHead(runningQueue);
 
     //check waitQueue first
     node *temp = newNode();
@@ -265,7 +265,7 @@ void timeStep(int time){
   int step = time - currentTime;
 
   //if job isn't finishing & quantum isn't finishing before time step
-  if(step < quantumSlice && runningQueue->first != NULL && runningQueue->first->job->remainingTime > step){
+  if(step < quantumSlice && (runningQueue->first != NULL && runningQueue->first->job->remainingTime > step)){
       resumeQuantum(step);
       return;
   }
@@ -273,7 +273,8 @@ void timeStep(int time){
 
   step = time - currentTime;
 
-  roundRobin();
+  roundRobin();  
+  
 
   //keep running quantums until we are close to time step
   while(step > quantum || (runningQueue->first != NULL && runningQueue->first->job->remainingTime < step)){
@@ -303,7 +304,6 @@ void release(int time, int jobNum, int deviceNum){
     //pretend to allocate to each & call bankers until we find one in a safe state
     node *temp = newNode();
     for(temp = waitQueue->first; temp != NULL; temp = temp->next){
-      printf("for loop");
       if(temp->job->devicesRequested <= devicesAvailable){
         temp->job->devicesAllocated += temp->job->devicesRequested;
         devicesAvailable -= temp->job->devicesRequested;
@@ -321,7 +321,7 @@ void release(int time, int jobNum, int deviceNum){
           printf("print");
           addToQueue(readyQueue, temp->job);
           removeFromQueue(waitQueue, temp->job);
-        }
+        //}
       }
     }
   }
@@ -556,8 +556,8 @@ void output(){
   printf("} \n");
 
   //generate corresponding .json output file
-  if(FILE_NAME != "sample_input.txt"){
-    //generateJSON();
+  if(FILE_NAME != "sample_input.txt" && FILE_NAME != "test_input2.txt"){
+    generateJSON();
   }
   
 }
