@@ -3,30 +3,12 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-void* printJob(job *j){
-  printf("Arrival: %d \n", j->processArrival);
-  printf("Process exists?");
-  printf(j->processExists ? "true\n" : "false\n");
-  printf("Completion Time: %d\n", j->completionTime);
-  printf("turnaround Time: %d\n", j->turnaroundTime);
-  printf("weightedTurnaround Time: %d\n", j->weightedTurnaroundTime);
-  printf("Job #: %d\n", j->jobNumber);
-  printf("priority: %d\n", j->priority);
-  printf("memUnits: %d\n", j->memUnits);
-  printf("memAllocated: %d\n", j->memAllocated);
-  printf("runtime: %d\n", j->runTime);
-  printf("remainingTime: %d\n", j->remainingTime);
-  printf("devicesMax: %d\n", j->devicesMax);
-  printf("devicesAllocated: %d\n", j->devicesAllocated);
-  printf("devicesRequested: %d\n", j->devicesRequested);
-}
-
-//create null job
+//create a new job
 job* newJob(){
   job *temp = (struct job*)malloc(sizeof(struct job));
   return temp;
 }
-//create new nodes
+//create a new node
 node* newNode(){
   node *temp = (struct node*)malloc(sizeof(struct node));
   return temp;
@@ -39,7 +21,7 @@ queue *createQueue(){
   return q;
 }
 
-//add a job j to q
+//add a node with job j to queue q
 void addToQueue(queue *q, job *j){
   node *temp = newNode();
   temp->job = j;
@@ -52,7 +34,7 @@ void addToQueue(queue *q, job *j){
   q->last = temp;
 }
 
-//remove a job from the queue
+//remove the first node from the queue
 node *removeHead(queue *q){
   if(q->first == NULL)
     return NULL;
@@ -64,7 +46,7 @@ node *removeHead(queue *q){
   return temp;
 }
 
-//not 100% sure of this but lets pretend its fine
+//remove a a node from the queue given its job
 node *removeFromQueue(queue *q, job *j){
   if(q->first == NULL)
     return NULL;
@@ -84,14 +66,14 @@ node *removeFromQueue(queue *q, job *j){
   }
 }
 
-/* function to swap data of two nodes a and b*/
+//helper function to swap the jobs of two nodes
 void swap(node *a, node *b){
     job *j = a->job;
     a->job = b->job;
     b->job = j;
 }
 
-//sort the queue by runtime
+//sort the queue by runtime for SJF
 void sortByRuntime(queue *q){
     node *start = q->first;
     job *j = start->job;
@@ -100,7 +82,7 @@ void sortByRuntime(queue *q){
     node *ptr1;
     node *lptr = NULL;
 
-    /* Checking for empty list */
+    //Checking for empty list
     if (start == NULL)
         return;
 
