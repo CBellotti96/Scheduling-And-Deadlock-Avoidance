@@ -8,7 +8,7 @@
 #include <stdbool.h>
 
 #define SIZE 1024 //used for file reading buffer
-#define FILE_NAME "sample_input.txt" //must change based on input test
+#define FILE_NAME "test_input1.txt" //must change based on input test
 
 //global system vars
 int currentTime;
@@ -321,7 +321,7 @@ void release(int time, int jobNum, int deviceNum){
           printf("print");
           addToQueue(readyQueue, temp->job);
           removeFromQueue(waitQueue, temp->job);
-        //}
+        }
       }
     }
   }
